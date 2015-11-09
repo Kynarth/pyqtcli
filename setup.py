@@ -1,0 +1,26 @@
+from setuptools import setup
+
+setup(
+    name="pyqtcli",
+    version="0.1",
+    description="CLI tool to help managing PyQt5 project",
+    author="Kynarth Alseif",
+    author_email="kynarth.alseif@gmail.com",
+    packages=["pyqtcli"],
+    include_package_data=True,
+    install_requires=["click>=5.1", "colorama>=0.3.3"],
+    entry_points="""
+        [console_scripts]
+        pyqtcli=pyqtcli.cli:pyqtcli
+    """,
+    license="MIT",
+    zip_safe=False,
+    keywords="pyqt5 qrc",
+    classifiers=[
+        "Topic :: Utilities",
+        "Environment :: Console",
+        "Development Status :: 2 - Pre-Alpha",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3 :: Only",
+    ],
+)
