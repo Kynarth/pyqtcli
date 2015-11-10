@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-import os
 import click
-import subprocess
+
+from pyqtcli.makerc import process_qrc_files
+from pyqtcli.makerc import recursive_process
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -17,26 +18,27 @@ def pyqtcli():
 
 @pyqtcli.command("makerc", short_help="Generate python qrc module")
 @click.option("-v", "--verbose", is_flag=True, help="Explain the process")
+@click.option("-r", "--recursive", is_flag=True,
+              help="Search recursively for qrc files to process.")
 @click.argument('qrc_files', nargs=-1, type=click.Path(exists=True))
-def makerc(qrc_files, verbose):
+def makerc(qrc_files, recursive, verbose):
     """Generate python module for corresponding given qrc files."""
-    if qrc_files == ():
+    # Check all qrc files recursively
+    if recursive:
+        recursive_qrc_files = recursive_process()
+
+        # Check if recursive option find qrc files
+        if recursive_qrc_files == ():
+            click.secho(
+                "Error: Could not find any qrc files", err=True, fg="red")
+        else:
+            process_qrc_files(recursive_qrc_files, verbose)
+
+    # Process given files or warns user if none
+    if qrc_files:
+        process_qrc_files(qrc_files, verbose)
+    elif not recursive:
         click.secho("Warning: No qrc files was given to process.", fg="yellow")
-
-    # Process each given qrc files
-    for qrc_file in qrc_files:
-        # Get absolute path
-        qrc_file = os.path.abspath(qrc_file)
-
-        result_file = os.path.splitext(qrc_file)[0] + "_rc.py"
-        # if not subprocess.call(["pyrcc5", qrc_file, "-o", result_file]):
-        if subprocess.call(["pyrcc5", qrc_file, "-o", result_file]):
-            # Let pyrcc5 give his error message
-            continue
-
-        # Manage -v --verbose option
-        if verbose:
-            click.echo("Python qrc file '{}' created.".format(result_file))
 
 
 if __name__ == "__main__":

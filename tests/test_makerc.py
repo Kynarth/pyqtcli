@@ -54,7 +54,10 @@ def test_makerc_with_on_file():
             pyqtcli, ["makerc", "-v", QRC_FILE_1]
         )
 
-        print("result:", result.output)
+        print("\n===================== Test with one file ====================")
+        print("Exit code:", result.exit_code)
+        print("Verbose:\n" + result.output)
+
         assert os.path.isfile(RESULT1)
 
 
@@ -76,7 +79,10 @@ def test_makerc_with_two_files_in_same_directory():
             pyqtcli, ["makerc", "-v", QRC_FILE_1, QRC_FILE_1_BIS]
         )
 
-        print("result:", result.output)
+        print("\n============== Test with two files on same dir ==============")
+        print("Exit code:", result.exit_code)
+        print("Verbose:\n" + result.output)
+
         assert os.path.isfile(RESULT1)
         assert os.path.isfile(RESULT1_BIS)
 
@@ -111,7 +117,38 @@ def test_makerc_with_3_files_in_different_dirs():
             pyqtcli, ["makerc", "-v", QRC_FILE_1, QRC_FILE_2, QRC_FILE_3]
         )
 
-        print("result:", result.output)
+        print("\n============ Test with 3 files on different dirs ============")
+        print("Exit code:", result.exit_code)
+        print("Verbose:\n" + result.output)
+
         assert os.path.isfile(RESULT1)
         assert os.path.isfile(RESULT2)
         assert os.path.isfile(RESULT3)
+
+
+def test_makerc_recursive_option():
+    runner = CliRunner()
+
+    with runner.isolated_filesystem():
+        # Create tmp qrc test files in two directories
+        os.mkdir(QRC_DIR_1)
+        open(TXT_FILE_1, 'a').close()
+        open(TXT_FILE_2, 'a').close()
+
+        with open(QRC_FILE_1, 'w') as f:
+            f.write(dedent(QRC))
+
+        with open(QRC_FILE_2, 'w') as f:
+            f.write(dedent(QRC))
+
+        # Launch makerc command
+        result = runner.invoke(
+            pyqtcli, ["makerc", "-v", "-r"]
+        )
+
+        print("\n================== Test recursive option ====================")
+        print("Exit code:", result.exit_code)
+        print("Verbose:\n" + result.output)
+
+        assert os.path.isfile(RESULT1)
+        assert os.path.isfile(RESULT2)
