@@ -1,3 +1,6 @@
+sudo: required
+dist: trusty
+
 branches:
   only:
     - master
@@ -12,9 +15,10 @@ env:
 
 install:
   - pip install -r requirements.txt
-  - pip install python-qt5
   - pip install coveralls
   - pip install tox
+  # Get pyrrc5, lupdate etc ...
+  - sudo apt-get install pyqt5-dev-tools
 
 script:
   - tox
