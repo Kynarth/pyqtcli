@@ -12,6 +12,7 @@ env:
 
 install:
   - pip install -r requirements.txt
+  - pip install python-qt5
   - pip install coveralls
   - pip install tox
 
