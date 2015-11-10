@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="pyqtcli",
-    version="0.1",
+    version="0.2.1",
     description="CLI tool to help managing PyQt5 project",
     author="Kynarth Alseif",
     author_email="kynarth.alseif@gmail.com",
