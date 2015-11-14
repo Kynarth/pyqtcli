@@ -11,7 +11,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
-@click.version_option(version='0.1.0')
+@click.version_option(version='0.3.1')
 def pyqtcli():
     """A command line tool to help in managing PyQt5 project."""
     pass
@@ -65,7 +65,3 @@ def makealias(qrc_files, recursive, verbose):
         write_alias(qrc_files, verbose)
     elif not recursive:
         click.secho("Warning: No qrc files was given to process.", fg="yellow")
-
-
-if __name__ == "__main__":
-    pyqtcli()

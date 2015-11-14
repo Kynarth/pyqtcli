@@ -57,16 +57,17 @@ class QRCFile(GenerativeBase):
         self._tree = etree.ElementTree(self._root)
 
     @chain
-    def add_qresource(self, prefix):
+    def add_qresource(self, prefix=None):
         """Create to the qresource subelement.
 
         Args:
-            prefix (str): Prefix attribute like => "/" for qresource element.
+            prefix (str[optional]): Prefix attribute like => "/"
+                for qresource element.
 
         """
         # Check if given prefix does not already exist.
         for qresource in self._qresources:
-            if qresource.get("prefix") == prefix:
+            if qresource.get("prefix", None) == prefix:
                 print(
                     "Error: Qresource with prefix: '{}' already exists.".format(
                         prefix), file=sys.stderr
@@ -74,9 +75,12 @@ class QRCFile(GenerativeBase):
                 sys.exit(1)
 
         # Create element
-        self._last_qresource = etree.SubElement(
-            self._root, "qresource", {"prefix": prefix}
-        )
+        if prefix is not None:
+            self._last_qresource = etree.SubElement(
+                self._root, "qresource", {"prefix": prefix}
+            )
+        else:
+            self._last_qresource = etree.SubElement(self._root, "qresource")
 
         # Add created element to others
         self._qresources.append(self._last_qresource)

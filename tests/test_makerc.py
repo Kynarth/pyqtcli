@@ -7,6 +7,7 @@ from tests.qrc import TestQRCFile
 
 
 def test_makerc_with_on_file():
+    print("\n======================= Test with one file ======================")
     runner = CliRunner()
 
     with runner.isolated_filesystem():
@@ -20,7 +21,6 @@ def test_makerc_with_on_file():
             pyqtcli, ["makerc", "-v", qrc.path]
         )
 
-        print("\n===================== Test with one file ====================")
         print("Exit code:", result.exit_code)
         print("Verbose:\n" + result.output)
 
@@ -28,6 +28,7 @@ def test_makerc_with_on_file():
 
 
 def test_makerc_with_two_files_in_same_directory():
+    print("\n================ Test with two files on same dir ================")
     runner = CliRunner()
 
     with runner.isolated_filesystem():
@@ -46,7 +47,6 @@ def test_makerc_with_two_files_in_same_directory():
             pyqtcli, ["makerc", "-v", qrc.path, qrc_bis.path]
         )
 
-        print("\n============== Test with two files on same dir ==============")
         print("Exit code:", result.exit_code)
         print("Verbose:\n" + result.output)
 
@@ -55,6 +55,7 @@ def test_makerc_with_two_files_in_same_directory():
 
 
 def test_makerc_with_3_files_in_different_dirs():
+    print("\n============== Test with 3 files on different dirs ==============")
     runner = CliRunner()
 
     with runner.isolated_filesystem():
@@ -75,7 +76,7 @@ def test_makerc_with_3_files_in_different_dirs():
         qrc_down = (
             TestQRCFile("res_down", "down")
             .add_qresource("/test_dir/down")
-            .add_file("file_down.txt").build()
+            .add_file("down/file_down.txt").build()
         )
 
         # Launch makerc command
@@ -83,7 +84,6 @@ def test_makerc_with_3_files_in_different_dirs():
             pyqtcli, ["makerc", "-v", qrc.path, qrc_top.path, qrc_down.path]
         )
 
-        print("\n============ Test with 3 files on different dirs ============")
         print("Exit code:", result.exit_code)
         print("Verbose:\n" + result.output)
 
@@ -93,6 +93,7 @@ def test_makerc_with_3_files_in_different_dirs():
 
 
 def test_makerc_recursive_option():
+    print("\n==================== Test recursive option ======================")
     runner = CliRunner()
 
     with runner.isolated_filesystem():
@@ -103,12 +104,12 @@ def test_makerc_recursive_option():
 
         qrc_bis = (
             TestQRCFile("res_bis", "qrc_dir").add_qresource("/qrc_dir")
-            .add_file("file_bis.txt").build()
+            .add_file("qrc_dir/file_bis.txt").build()
         )
 
         qrc_ter = (
             TestQRCFile("res_ter", "dir1/dir2").add_qresource("/dir1/dir2")
-            .add_file("file_ter.txt").build()
+            .add_file("dir1/dir2/file_ter.txt").build()
         )
 
         # Launch makerc command
@@ -116,7 +117,6 @@ def test_makerc_recursive_option():
             pyqtcli, ["makerc", "-v", "-r"]
         )
 
-        print("\n================== Test recursive option ====================")
         print("Exit code:", result.exit_code)
         print("Verbose:\n" + result.output)
 

@@ -1,8 +1,6 @@
 import os
 import sys
 
-from lxml import etree
-
 from pyqtcli.qrc import chain
 from pyqtcli.qrc import QRCFile
 from pyqtcli.qrc import GenerativeBase
@@ -35,30 +33,6 @@ class TestQRCFile(QRCFile, GenerativeBase):
         super(TestQRCFile, self).__init__(name, path)
 
     @chain
-    def add_qresource(self, prefix):
-        """Create qresource subelement with prefix attribute.
-
-        Args:
-            prefix (str): Prefix attribute like => "/" for qresource element.
-
-        """
-        super().add_qresource(prefix)
-
-        # Create element
-        self._last_qresource = etree.SubElement(
-            self._root, "qresource", {"prefix": prefix}
-        )
-
-        # Change prefix for "" if "/" is provided
-        if prefix.startswith("/"):
-            prefix = ""
-
-        # Create dir for given prefix
-        dir_path = os.path.join(os.path.dirname(self.path), prefix)
-        if not os.path.isdir(dir_path):
-            os.makedirs(dir_path)
-
-    @chain
     def add_file(self, resource):
         """
         Add a file to the last added qresource and create its file in a
@@ -70,15 +44,19 @@ class TestQRCFile(QRCFile, GenerativeBase):
         """
         super().add_file(resource)
 
-        # Change prefix for "" if "/" is provided
-        path = self._last_qresource.get("prefix")
-        if path.startswith("/"):
-            path = ""
+        # Create directories of the resource if not exists
+        dir_name = os.path.join(
+            os.path.split(self.path)[0],
+            os.path.split(resource)[0]
+        )
 
-        # Create the resource
-        file_path = os.path.join(os.path.dirname(self.path), path, resource)
-        if not os.path.isfile(file_path):
-            open(file_path, 'a').close()
+        if not os.path.isdir(dir_name):
+            os.makedirs(dir_name)
+
+        resource = os.path.join(os.path.split(self.path)[0], resource)
+        if not os.path.isfile(resource):
+            open(resource, 'a').close()
         else:
-            print("Error: the file: {} already exists.".format(file_path))
+            print("Resource:", resource)
+            print("Error: the file: {} already exists.".format(resource))
             sys.exit(1)
