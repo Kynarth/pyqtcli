@@ -33,7 +33,7 @@ class TestQRCFile(QRCFile, GenerativeBase):
         super(TestQRCFile, self).__init__(name, path)
 
     @chain
-    def add_file(self, resource):
+    def add_file(self, resource, prefix=None):
         """
         Add a file to the last added qresource and create its file in a
         dir corresponding to the qresource's prefix attribute.
@@ -42,7 +42,7 @@ class TestQRCFile(QRCFile, GenerativeBase):
             resource (str): Path to the resource.
 
         """
-        super().add_file(resource)
+        super().add_file(resource, prefix)
 
         # Create directories of the resource if not exists
         dir_name = os.path.join(
@@ -57,6 +57,4 @@ class TestQRCFile(QRCFile, GenerativeBase):
         if not os.path.isfile(resource):
             open(resource, 'a').close()
         else:
-            print("Resource:", resource)
-            print("Error: the file: {} already exists.".format(resource))
-            sys.exit(1)
+            sys.exit("Error: the file: {} already exists.".format(resource))
