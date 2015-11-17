@@ -16,7 +16,6 @@ def qrc_contents():
     # QRC file corresponding to the resources folder
     qrc_text = """<RCC>
     <qresource prefix="/">
-        <file>../..{0}/text.txt</file>
         <file>../..{0}/file.txt</file>
     </qresource>
     <qresource prefix="/images">
