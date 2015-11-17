@@ -3,16 +3,15 @@ import os
 from click.testing import CliRunner
 
 from pyqtcli.cli import pyqtcli
-from tests.qrc import TestQRCFile
+from pyqtcli.test.qrc import QRCTestFile
 
 
 def test_makerc_with_on_file():
-    print("\n======================= Test with one file ======================")
     runner = CliRunner()
 
     with runner.isolated_filesystem():
         qrc = (
-            TestQRCFile("res").add_qresource("/")
+            QRCTestFile("res").add_qresource("/")
             .add_file("file.txt").build()
         )
 
@@ -21,24 +20,22 @@ def test_makerc_with_on_file():
             pyqtcli, ["makerc", "-v", qrc.path]
         )
 
-        print("Exit code:", result.exit_code)
         print("Verbose:\n" + result.output)
 
         assert os.path.isfile(qrc.path)
 
 
 def test_makerc_with_two_files_in_same_directory():
-    print("\n================ Test with two files on same dir ================")
     runner = CliRunner()
 
     with runner.isolated_filesystem():
         qrc = (
-            TestQRCFile("res").add_qresource("/")
+            QRCTestFile("res").add_qresource("/")
             .add_file("file.txt").build()
         )
 
         qrc_bis = (
-            TestQRCFile("res_bis").add_qresource("/")
+            QRCTestFile("res_bis").add_qresource("/")
             .add_file("file_bis.txt").build()
         )
 
@@ -47,7 +44,6 @@ def test_makerc_with_two_files_in_same_directory():
             pyqtcli, ["makerc", "-v", qrc.path, qrc_bis.path]
         )
 
-        print("Exit code:", result.exit_code)
         print("Verbose:\n" + result.output)
 
         assert os.path.isfile(qrc.path)
@@ -55,7 +51,6 @@ def test_makerc_with_two_files_in_same_directory():
 
 
 def test_makerc_with_3_files_in_different_dirs():
-    print("\n============== Test with 3 files on different dirs ==============")
     runner = CliRunner()
 
     with runner.isolated_filesystem():
@@ -64,17 +59,17 @@ def test_makerc_with_3_files_in_different_dirs():
         os.chdir("test_dir")
 
         qrc = (
-            TestQRCFile("res").add_qresource("/test_dir")
+            QRCTestFile("res").add_qresource("/test_dir")
             .add_file("file.txt").build()
         )
 
         qrc_top = (
-            TestQRCFile("res_top", "../").add_qresource("/")
+            QRCTestFile("res_top", "../").add_qresource("/")
             .add_file("file_top.txt").build()
         )
 
         qrc_down = (
-            TestQRCFile("res_down", "down")
+            QRCTestFile("res_down", "down")
             .add_qresource("/test_dir/down")
             .add_file("down/file_down.txt").build()
         )
@@ -84,7 +79,6 @@ def test_makerc_with_3_files_in_different_dirs():
             pyqtcli, ["makerc", "-v", qrc.path, qrc_top.path, qrc_down.path]
         )
 
-        print("Exit code:", result.exit_code)
         print("Verbose:\n" + result.output)
 
         assert os.path.isfile(qrc.path)
@@ -93,22 +87,21 @@ def test_makerc_with_3_files_in_different_dirs():
 
 
 def test_makerc_recursive_option():
-    print("\n==================== Test recursive option ======================")
     runner = CliRunner()
 
     with runner.isolated_filesystem():
         qrc = (
-            TestQRCFile("res").add_qresource("/")
+            QRCTestFile("res").add_qresource("/")
             .add_file("file.txt").build()
         )
 
         qrc_bis = (
-            TestQRCFile("res_bis", "qrc_dir").add_qresource("/qrc_dir")
+            QRCTestFile("res_bis", "qrc_dir").add_qresource("/qrc_dir")
             .add_file("qrc_dir/file_bis.txt").build()
         )
 
         qrc_ter = (
-            TestQRCFile("res_ter", "dir1/dir2").add_qresource("/dir1/dir2")
+            QRCTestFile("res_ter", "dir1/dir2").add_qresource("/dir1/dir2")
             .add_file("dir1/dir2/file_ter.txt").build()
         )
 
@@ -117,7 +110,6 @@ def test_makerc_recursive_option():
             pyqtcli, ["makerc", "-v", "-r"]
         )
 
-        print("Exit code:", result.exit_code)
         print("Verbose:\n" + result.output)
 
         assert os.path.isfile(qrc.path)

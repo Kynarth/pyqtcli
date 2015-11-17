@@ -2,17 +2,16 @@ from lxml import etree
 from click.testing import CliRunner
 
 from pyqtcli.cli import pyqtcli
-from tests.qrc import TestQRCFile
+from pyqtcli.test.qrc import QRCTestFile
 
 
 def test_makealias_with_on_file():
-    print("\n======================= Test with one file ======================")
     runner = CliRunner()
 
     with runner.isolated_filesystem():
         # Create false qrc files for testing
         qrc = (
-            TestQRCFile("res")
+            QRCTestFile("res")
             .add_qresource().add_file("file.txt").add_file("test.txt")
             .add_qresource("/images").add_file("images/icon.png").build()
         )
@@ -28,13 +27,12 @@ def test_makealias_with_on_file():
 
 
 def test_makealias_with_duplication():
-    print("\n===================== Test with duplication =====================")
     runner = CliRunner()
 
     with runner.isolated_filesystem():
         # Create false qrc files for testing
         qrc = (
-            TestQRCFile("res")
+            QRCTestFile("res")
             .add_qresource("/").add_file("file.txt").add_file("test/file.txt")
             .build()
         )
@@ -56,34 +54,33 @@ def test_makealias_with_duplication():
 
 
 def test_makealias_recursive():
-    print("\n=================== Test with recursive option ==================")
     runner = CliRunner()
 
     with runner.isolated_filesystem():
         # Create false qrc files for testing
         qrc = (
-            TestQRCFile("res")
+            QRCTestFile("res.qrc")
             .add_qresource("/").add_file("file.txt")
             .add_qresource("/test").add_file("test/file.txt")
             .build()
         )
 
         sub_qrc = (
-            TestQRCFile("res", "sub")
+            QRCTestFile("res", "sub")
             .add_qresource("/").add_file("file.txt")
             .add_qresource("/test").add_file("test/file.txt")
             .build()
         )
 
         sub_sub = (
-            TestQRCFile("res", "sub/sub")
+            QRCTestFile("res", "sub/sub")
             .add_qresource("/").add_file("file.txt")
             .add_qresource("/test").add_file("test/file.txt")
             .build()
         )
 
         other_sub = (
-            TestQRCFile("res", "other")
+            QRCTestFile("res", "other")
             .add_qresource("/").add_file("file.txt")
             .add_qresource("/test").add_file("test/file.txt")
             .build()

@@ -2,61 +2,42 @@
 
 import os
 import sys
+import click
 
 from lxml import etree
-from functools import wraps
 
 
-class GenerativeBase(object):
-    def _generate(self):
-        s = self.__class__.__new__(self.__class__)
-        s.__dict__ = self.__dict__.copy()
-        return s
-
-
-def chain(func):
-    @wraps(func)
-    def decorator(self, *args, **kw):
-        self = self._generate()
-        func(self, *args, **kw)
-        return self
-    return decorator
-
-
-class QRCFile(GenerativeBase):
+class QRCFile():
     """Class generating qrc file.
 
     Attributes:
-        name (str): File name of the new qrc file.
+        name (str): File name of the new qrc file. Qqrc extension is
+            automatically added)
         path (optional[str]): Path to new qrc file.
         _qresources (list[etree.SubElement]): List of qresources created.
         _last_qresource (etree.SubElement): Last qresource created.
         _root (etree.Element): Root element of qrc file.
         _tree (etree.ElementTree): Qrc tree with added qresources and resources.
 
-
-    Example:
-        >>>(
-        ...    QRCFile("test")
-        ...    .add_qresource("/")
-        ...    .add_file("test.txt")
-        ...    .add_file("test1.txt")
-        ...    .add_qresource("/images")
-        ...    .add_file("img.png")
-        ...    .build()
-        ...)
-
     """
 
     def __init__(self, name, path="."):
-        self.name = name
-        self.path = os.path.join(path, name + ".qrc")
+        self.name = name if os.path.splitext(name)[1] else name + ".qrc"
+        self.path = os.path.join(path, self.name)
         self._qresources = []
         self._last_qresource = None
         self._root = etree.Element("RCC")
         self._tree = etree.ElementTree(self._root)
 
-    @chain
+        if os.path.isfile(self.path):
+            msg = (
+                "Warning: qrc file '{}' already exists.\n"
+                "Do you want to overwrite this file?"
+            ).format(self.path)
+            if click.confirm(msg, abort=True):
+                click.secho("Previous qrc file has been overwritten",
+                            fg="yellow")
+
     def add_qresource(self, prefix=None):
         """Create to the qresource subelement.
 
@@ -84,7 +65,6 @@ class QRCFile(GenerativeBase):
         # Add created element to others
         self._qresources.append(self._last_qresource)
 
-    @chain
     def add_file(self, resource, prefix=None):
         """Add a resource to a given prefix.
 
@@ -115,10 +95,38 @@ class QRCFile(GenerativeBase):
         # Add the resource to qresource element
         etree.SubElement(self._last_qresource, "file",).text = resource
 
-    @chain
     def build(self):
         """Generate qrc file in function avec path and name attribute."""
         with open(self.path, "w") as f:
             f.write(etree.tostring(
                 self._tree, pretty_print=True).decode('utf-8')
             )
+
+
+def create_qrc(qrc, res_folder):
+    """Generate qrc file with the given name from provided folder of resources
+
+    Args:
+        qrc_name (QRCFile): A newly created QRCFile.
+        res_folder (str): Relative path to folder of resources to record in
+            relation to the qrc file directory.
+
+    """
+    # Loop over the folder of resources
+    for root, dirs, files in os.walk(res_folder):
+        if root == res_folder:
+            qrc.add_qresource("/")
+            # Directories in the first level will serve as qresource
+            for directory in dirs:
+                qrc.add_qresource("/" + directory)
+
+        # Record all resources recursively
+        for resource in files:
+            try:
+                prefix = "/" + root.replace(res_folder, "").split("/")[1]
+            except IndexError:
+                prefix = "/"
+            qrc.add_file(os.path.join(root, resource), prefix)
+
+    # Write qrc file
+    qrc.build()

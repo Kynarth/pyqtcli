@@ -1,12 +1,28 @@
 import os
 import sys
 
-from pyqtcli.qrc import chain
+from functools import wraps
+
 from pyqtcli.qrc import QRCFile
-from pyqtcli.qrc import GenerativeBase
 
 
-class TestQRCFile(QRCFile, GenerativeBase):
+class GenerativeBase():
+    def _generate(self):
+        s = self.__class__.__new__(self.__class__)
+        s.__dict__ = self.__dict__.copy()
+        return s
+
+
+def chain(func):
+    @wraps(func)
+    def decorator(self, *args, **kw):
+        self = self._generate()
+        func(self, *args, **kw)
+        return self
+    return decorator
+
+
+class QRCTestFile(QRCFile, GenerativeBase):
     """Generate a qrc file for tests with false resource directories and files.
 
     Attributes:
@@ -30,7 +46,18 @@ class TestQRCFile(QRCFile, GenerativeBase):
     """
 
     def __init__(self, name, path="."):
-        super(TestQRCFile, self).__init__(name, path)
+        super(QRCTestFile, self).__init__(name, path)
+
+    @chain
+    def add_qresource(self, prefix=None):
+        """Create to the qresource subelement.
+
+        Args:
+            prefix (str[optional]): Prefix attribute like => "/"
+                for qresource element.
+
+        """
+        super().add_qresource(prefix)
 
     @chain
     def add_file(self, resource, prefix=None):
@@ -58,3 +85,8 @@ class TestQRCFile(QRCFile, GenerativeBase):
             open(resource, 'a').close()
         else:
             sys.exit("Error: the file: {} already exists.".format(resource))
+
+    @chain
+    def build(self):
+        """Generate qrc file in function avec path and name attribute."""
+        super().build()
