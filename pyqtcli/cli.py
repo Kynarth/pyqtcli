@@ -4,6 +4,7 @@ import os
 import click
 
 from pyqtcli import __version__
+from pyqtcli.qrc import QRCFile
 from pyqtcli.config import PyqtcliConfig
 
 
@@ -35,3 +36,14 @@ def init(quiet, yes):
 
     if not quiet:
         click.secho(message, fg="green", bold=True)
+
+
+@pyqtcli.command("new", short_help="Generate a new file like qrc file")
+@click.option("--qrc", "file_type", flag_value="qrc", default=True)
+@click.argument("path", default="res.qrc", type=click.Path())
+def new(file_type, path):
+    """Create a new file of given type (qrc by default)."""
+    path, name = os.path.split(path)
+
+    if file_type == "qrc":
+        QRCFile(name, path).build()
