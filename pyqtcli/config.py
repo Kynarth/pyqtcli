@@ -16,8 +16,12 @@ class PyqtcliConfig():
     def __init__(self):
         self.path = os.path.join(os.getcwd(), self.INI_FILE)
         self.cparser = configparser.ConfigParser()
-        self.initialize()
-        self.cparser.read(self.INI_FILE)
+
+        # Create a new ini file if not exist
+        if not os.path.isfile(self.path):
+            self.initialize()
+
+        self.read()
 
     def initialize(self):
         """Build a basic config file with name and path to PyQt5 project."""
@@ -26,6 +30,10 @@ class PyqtcliConfig():
         self.cparser.set("project", "name", project_name)
         self.cparser.set("project", "path", os.getcwd())
         self.save()
+
+    def read(self):
+        """Read the config file."""
+        self.cparser.read(self.INI_FILE)
 
     def save(self):
         """Save changes."""

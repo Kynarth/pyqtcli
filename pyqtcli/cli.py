@@ -8,6 +8,9 @@ from pyqtcli.qrc import QRCFile
 from pyqtcli.config import PyqtcliConfig
 
 
+pass_config = click.make_pass_decorator(PyqtcliConfig, ensure=True)
+
+
 @click.group()
 @click.version_option(version=__version__)
 def pyqtcli():
@@ -41,9 +44,17 @@ def init(quiet, yes):
 @pyqtcli.command("new", short_help="Generate a new file like qrc file")
 @click.option("--qrc", "file_type", flag_value="qrc", default=True)
 @click.argument("path", default="res.qrc", type=click.Path())
-def new(file_type, path):
+@pass_config
+def new(config, file_type, path):
     """Create a new file of given type (qrc by default)."""
     path, name = os.path.split(path)
 
     if file_type == "qrc":
-        QRCFile(name, path).build()
+        qrc = QRCFile(name, path)
+        qrc.build()
+
+        # Add a new section for the created qrc file
+        qrc_name = os.path.splitext(qrc.name)[0]
+        config.cparser.add_section(qrc_name)
+        config.cparser.set(qrc_name, "path", qrc.path)
+        config.save()
