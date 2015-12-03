@@ -5,6 +5,8 @@ import click
 
 from pyqtcli import __version__
 from pyqtcli.qrc import QRCFile
+from pyqtcli.qrc import read_qrc
+from pyqtcli.qrc import fill_qresource
 from pyqtcli.config import PyqtcliConfig
 
 
@@ -58,3 +60,22 @@ def new(config, file_type, path):
         config.cparser.add_section(qrc_name)
         config.cparser.set(qrc_name, "path", qrc.path)
         config.save()
+
+
+@pyqtcli.command("addqres", short_help="Create a <qresource> element in qrc.")
+@click.argument("qrc", type=click.Path(exists=True, dir_okay=False))
+@click.argument("res_folder", type=click.Path(exists=True, file_okay=False))
+@pass_config
+def addqres(config, qrc, res_folder):
+    qrc_name = os.path.splitext(qrc)[0]
+
+    # Check if the given qrc file is recorded in project config file
+    qrcs = config.get_qrcs()
+    if qrc_name not in qrcs:
+        click.secho("Qrc: {} isn't part of the project.".format(qrc))
+        raise click.Abort()
+
+    qrcfile = read_qrc(qrc)
+    qrcfile.add_qresource("/" + os.path.basename(res_folder))
+    fill_qresource(qrcfile, res_folder)
+    qrcfile.build()

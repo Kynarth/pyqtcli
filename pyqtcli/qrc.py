@@ -51,6 +51,22 @@ class QRCFile():
         # Add created element to others
         self._qresources.append(self._last_qresource)
 
+    def get_qresource(self, prefix):
+        """Get qresource element corresponding to the passed prefix.
+
+        Args:
+            prefix (str): "Name of prefix" Ex: "/images"
+
+        Returns:
+            etree.Element: Corresponding qresource to prefix
+
+        """
+        for qresource in self._qresources:
+            if qresource.attrib.get("prefix") == prefix:
+                return qresource
+
+        return None
+
     def add_file(self, resource, prefix=None):
         """Add a resource to a given prefix.
         Args:
@@ -91,3 +107,50 @@ class QRCFile():
             f.write(etree.tostring(
                 self._tree, pretty_print=True).decode('utf-8')
             )
+
+
+def read_qrc(qrc):
+    """Parse a qrc file to return a QRCFile object.
+
+    Args:
+        qrc (str): Path to the qrc file.
+
+    Returns:
+        QRCFile: QRCFile represening passed qrc file.
+
+    """
+    path, name = os.path.split(qrc)
+    qrcfile = QRCFile(name, path)
+
+    qrcfile._tree = etree.parse(qrc)
+    qrcfile._root = qrcfile._tree.getroot()
+
+    for qresource in qrcfile._root.iter(tag="qresource"):
+        qrcfile._qresource = qresource
+        qrcfile._last_qresource = qresource
+
+    return qrcfile
+
+
+def fill_qresource(qrc, folder, prefix=None):
+    """Fill a qrc with resources contained in the passed folder.
+
+    Each file of resource folder will be record as <file> subelement of the
+    corresponding qresource element (see prefix). The value of the subelement
+    is the relative path between the resource within the folder and the
+    qrc path.
+
+    Args:
+        qrc (QRCFile): A QRCFile object to add and fill qresource.
+        folder (str): Path to the folder of resources to record.
+    """
+    for root, dirs, files in os.walk(folder):
+        for resource in files:
+            resource_path = os.path.join(root, resource)
+            # Relative path between qrc file and the resource
+            path = os.path.relpath(resource_path, os.path.split(qrc.path)[0])
+
+            if prefix:
+                qrc.add_file(path, prefix)
+            else:
+                qrc.add_file(path)

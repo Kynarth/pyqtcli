@@ -35,6 +35,13 @@ class PyqtcliConfig():
         """Read the config file."""
         self.cparser.read(self.INI_FILE)
 
+    def get_qrcs(self):
+        """Return a list of qrc names contained in the project config file."""
+        self.read()
+        sections = self.cparser.sections()
+        sections.remove("project")
+        return sections
+
     def save(self):
         """Save changes."""
         with open(self.path, "w") as ini:
