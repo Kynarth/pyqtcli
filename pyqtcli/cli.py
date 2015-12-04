@@ -75,7 +75,18 @@ def addqres(config, qrc, res_folder):
         click.secho("Qrc: {} isn't part of the project.".format(qrc))
         raise click.Abort()
 
+    # Add qresource to qrc file
     qrcfile = read_qrc(qrc)
     qrcfile.add_qresource("/" + os.path.basename(res_folder))
     fill_qresource(qrcfile, res_folder)
     qrcfile.build()
+
+    # Add res_folder to dirs variable in the config file
+    # rel_path => relative path of res_folder from qrc file
+    rel_path = os.path.relpath(res_folder, os.path.split(qrcfile.path)[0])
+    dirs = config.cparser[qrc_name].get("dirs", None)
+    if dirs is None:
+        config.cparser.set(qrc_name, "dirs", rel_path)
+    else:
+        config.cparser.set(qrc_name, "dirs", dirs + ", " + rel_path)
+    config.save()
