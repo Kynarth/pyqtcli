@@ -8,8 +8,8 @@ from pyqtcli.qrc import QRCFile
 from pyqtcli.qrc import read_qrc
 from pyqtcli.qrc import fill_qresource
 from pyqtcli.config import PyqtcliConfig
-from pyqtcli.makealias import write_alias
 from pyqtcli.utils import recursive_file_search
+from pyqtcli.makealias import write_alias
 
 
 pass_config = click.make_pass_decorator(PyqtcliConfig, ensure=True)
@@ -39,6 +39,7 @@ def init(quiet, yes):
     else:
         message = "Pyqtcli initialized in {}".format(os.getcwd())
 
+    # Generate project config file
     PyqtcliConfig()
 
     if not quiet:
@@ -52,11 +53,19 @@ def init(quiet, yes):
 @pass_config
 def new(config, file_type, path, verbose):
     """Create a new file of given type (qrc by default)."""
-    path, name = os.path.split(path)
+    file_path, name = os.path.split(path)
 
     if file_type == "qrc":
-        qrc = QRCFile(name, path)
+        qrc = QRCFile(name, file_path)
         qrc.build()
+
+        # Verify qrc file doesn't already exists
+        if os.path.splitext(name)[0] in config.get_qrcs():
+            click.secho(
+                "A qrc file named \'{}\' already exists".format(name),
+                fg="red", bold=True
+            )
+            return
 
         # Add a new section for the created qrc file
         qrc_name = os.path.splitext(qrc.name)[0]
@@ -65,7 +74,7 @@ def new(config, file_type, path, verbose):
         config.save()
 
         if verbose:
-            click.secho("Qrc file {} has been created.".format(path))
+            click.secho("Qrc file \'{}\' has been created.".format(path))
 
 
 @pyqtcli.command("addqres", short_help="Create a <qresource> element in qrc.")
@@ -90,7 +99,7 @@ def addqres(config, qrc, res_folder, alias, verbose):
             "Qrc: {} isn't part of the project.".format(qrc),
             fg="yellow", bold=True
         )
-        raise click.Abort()
+        return
 
     # Add qresource to qrc file
     qrcfile = read_qrc(qrc)
@@ -113,7 +122,7 @@ def addqres(config, qrc, res_folder, alias, verbose):
 
     if verbose:
         click.secho(
-            "Folder: {} has been recorded in {}.".format(res_folder, qrc)
+            "Folder: \'{}\' has been recorded in {}.".format(res_folder, qrc)
         )
 
 

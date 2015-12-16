@@ -1,7 +1,6 @@
 import os
-import click
-import pytest
 
+from pyqtcli.config import PyqtcliConfig
 from pyqtcli.config import find_project_config
 
 
@@ -31,5 +30,18 @@ def test_find_project_config_higher_in_tree_directory(config):
 
 
 def test_find_nonexistant_project_config():
-    with pytest.raises(click.Abort):
-        find_project_config()
+    assert find_project_config() is None
+
+
+def test_get_existing_config_file(config):
+    # Modify base config file
+    config.cparser.add_section("test")
+    config.save()
+
+    # Create sub dir and get in
+    os.mkdir("test")
+    os.chdir("test")
+
+    # Retrieve created config file
+    found_config = PyqtcliConfig()
+    assert found_config.cparser.sections() == ["project", "test"]

@@ -1,6 +1,8 @@
 import os
 import pytest
 
+from pyqtcli.cli import pyqtcli
+from click.testing import CliRunner
 from pyqtcli.config import PyqtcliConfig
 
 
@@ -19,6 +21,8 @@ def tmp_test_dir(tmpdir_factory, request):
 
 @pytest.fixture
 def config():
+    runner = CliRunner()
+    runner.invoke(pyqtcli, ["init"])
     return PyqtcliConfig()
 
 

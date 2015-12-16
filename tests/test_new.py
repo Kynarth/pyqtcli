@@ -36,3 +36,12 @@ def test_new_qrc(config):
     # Check qrc file has been added to project the config file
     config.read()
     assert "test" in config.cparser.sections()
+
+
+def test_new_duplication(config):
+    runner = CliRunner()
+    runner.invoke(pyqtcli, ["new"])
+    result = runner.invoke(pyqtcli, ["new"])
+    assert result.output.startswith(
+        "A qrc file named \'res.qrc\' already exists"
+    )

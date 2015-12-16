@@ -1,5 +1,4 @@
 import os
-import click
 import configparser
 
 
@@ -7,11 +6,7 @@ def find_project_config():
     """Search .pyqtclirc file in the current directory and higher.
 
     Returns:
-        str: Absolute path to the .pyqtclirc.
-
-    Raises:
-        Abort: If .pyqtclirc config file isn't found in top directories.
-
+        str: Absolute path to the .pyqtclirc and None if not found.
     """
     cwd = "."
     while True:
@@ -20,10 +15,7 @@ def find_project_config():
                 return os.path.abspath(entry.path)
 
         if os.path.abspath(cwd) == os.path.abspath(os.sep):
-            click.secho(
-                "Cannot find .pyqtclirc config file.", fg="red", bold=True
-            )
-            raise click.Abort()
+            return None
 
         cwd = "../" + cwd
 
@@ -39,9 +31,14 @@ class PyqtcliConfig():
 
     INI_FILE = ".pyqtclirc"
 
-    def __init__(self):
-        self.path = os.path.join(os.getcwd(), self.INI_FILE)
+    def __init__(self, path=None):
         self.cparser = configparser.ConfigParser()
+
+        if path:
+            self.path = path
+        else:
+            found_config = find_project_config()
+            self.path = found_config or os.path.join(os.getcwd(), self.INI_FILE)
 
         # Create a new ini file if not exist
         if not os.path.isfile(self.path):
@@ -59,7 +56,7 @@ class PyqtcliConfig():
 
     def read(self):
         """Read the config file."""
-        self.cparser.read(self.INI_FILE)
+        self.cparser.read(self.path)
 
     def get_qrcs(self):
         """Return a list of qrc names contained in the project config file."""
