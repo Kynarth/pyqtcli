@@ -46,3 +46,6 @@ def resources():
     open('resources/musics/solos/solo2.mp3', 'a').close()
     open('resources/musics/solos/best/best_solo1.mp3', 'a').close()
     open('resources/musics/solos/best/best_solo2.mp3', 'a').close()
+
+    # Nnumber of created files
+    return 14

@@ -9,9 +9,10 @@ from lxml import etree
 class QRCFile():
     """Class generating qrc file.
     Attributes:
-        name (str): File name of the new qrc file. Qqrc extension is
-            automatically added)
-        path (optional[str]): Path to new qrc file.
+        name (str): File name of the new qrc file. Qrc extension is
+            automatically added.
+        path (optional[str]): Absolute ath to new qrc file.
+        dir_path (str): Absolute path to the qrc file directory.
         _qresources (list[etree.SubElement]): List of qresources created.
         _last_qresource (etree.SubElement): Last qresource created.
         _root (etree.Element): Root element of qrc file.
@@ -20,7 +21,8 @@ class QRCFile():
 
     def __init__(self, name, path="."):
         self.name = name if os.path.splitext(name)[1] else name + ".qrc"
-        self.path = os.path.join(path, self.name)
+        self.dir_path = os.path.abspath(path)
+        self.path = os.path.join(self.dir_path, self.name)
         self._qresources = []
         self._last_qresource = None
         self._root = etree.Element("RCC")
@@ -98,9 +100,8 @@ class QRCFile():
     def build(self):
         """Generate qrc file in function avec path and name attribute."""
         # Create directories for qrc file if not exist
-        path = os.path.split(self.path)[0]
-        if not os.path.isdir(path) and path != "":
-            os.makedirs(path)
+        if not os.path.isdir(self.dir_path):
+            os.makedirs(self.dir_path)
 
         # Write qrc file
         with open(self.path, "w") as f:
@@ -148,7 +149,7 @@ def fill_qresource(qrc, folder, prefix=None):
         for resource in files:
             resource_path = os.path.join(root, resource)
             # Relative path between qrc file and the resource
-            path = os.path.relpath(resource_path, os.path.split(qrc.path)[0])
+            path = os.path.relpath(resource_path, qrc.dir_path)
 
             if prefix:
                 qrc.add_file(path, prefix)

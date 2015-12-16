@@ -1,5 +1,31 @@
 import os
+import click
 import configparser
+
+
+def find_project_config():
+    """Search .pyqtclirc file in the current directory and higher.
+
+    Returns:
+        str: Absolute path to the .pyqtclirc.
+
+    Raises:
+        Abort: If .pyqtclirc config file isn't found in top directories.
+
+    """
+    cwd = "."
+    while True:
+        for entry in os.scandir(cwd):
+            if entry.name == ".pyqtclirc":
+                return os.path.abspath(entry.path)
+
+        if os.path.abspath(cwd) == os.path.abspath(os.sep):
+            click.secho(
+                "Cannot find .pyqtclirc config file.", fg="red", bold=True
+            )
+            raise click.Abort()
+
+        cwd = "../" + cwd
 
 
 class PyqtcliConfig():
