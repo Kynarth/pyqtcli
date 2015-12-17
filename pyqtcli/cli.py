@@ -60,17 +60,16 @@ def new(config, file_type, path, verbose):
         qrc.build()
 
         # Verify qrc file doesn't already exists
-        if os.path.splitext(name)[0] in config.get_qrcs():
+        if name in config.get_qrcs():
             click.secho(
                 "A qrc file named \'{}\' already exists".format(name),
                 fg="red", bold=True
             )
-            return
+            raise click.Abort()
 
         # Add a new section for the created qrc file
-        qrc_name = os.path.splitext(qrc.name)[0]
-        config.cparser.add_section(qrc_name)
-        config.cparser.set(qrc_name, "path", qrc.path)
+        config.cparser.add_section(name)
+        config.cparser.set(name, "path", qrc.path)
         config.save()
 
         if verbose:
@@ -90,7 +89,10 @@ def addqres(config, qrc, res_folder, alias, verbose):
     the given folder of resources. All resources contained in this folder are
     recorded in qresource as <file> subelement.
     """
-    qrc_name = os.path.splitext(os.path.basename(qrc))[0]
+    qrc_name = os.path.basename(qrc)
+
+    # rel_path => relative path of res_folder from qrc file
+    rel_path = os.path.relpath(res_folder, os.path.dirname(qrc))
 
     # Check if the given qrc file is recorded in project config file
     qrcs = config.get_qrcs()
@@ -99,7 +101,22 @@ def addqres(config, qrc, res_folder, alias, verbose):
             "Qrc: {} isn't part of the project.".format(qrc),
             fg="yellow", bold=True
         )
-        return
+        raise click.Abort()
+
+    # Check if given res_folder has already been recorded
+    if rel_path in config.get_dirs(qrc_name):
+        click.secho(
+            "You have already added this resources folder to {}.".format(
+                qrc_name),
+            fg="yellow", bold=True
+        )
+        raise click.Abort()
+
+    # Add res_folder to dirs variable in the config file
+    if not config.add_dir(qrc_name, rel_path, commit=False):
+        click.secho("An error occured while adding {} to config file.".format(
+            res_folder))
+        raise click.Abort()
 
     # Add qresource to qrc file
     qrcfile = read_qrc(qrc)
@@ -110,14 +127,6 @@ def addqres(config, qrc, res_folder, alias, verbose):
     if alias:
         write_alias([qrcfile.path], verbose)
 
-    # Add res_folder to dirs variable in the config file
-    # rel_path => relative path of res_folder from qrc file
-    rel_path = os.path.relpath(res_folder, qrcfile.dir_path)
-    dirs = config.cparser[qrc_name].get("dirs", None)
-    if dirs is None:
-        config.cparser.set(qrc_name, "dirs", rel_path)
-    else:
-        config.cparser.set(qrc_name, "dirs", dirs + ", " + rel_path)
     config.save()
 
     if verbose:

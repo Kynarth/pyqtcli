@@ -19,7 +19,7 @@ def test_new_default(config):
 
     # Check qrc file has been added to project the config file
     config.read()
-    assert "res" in config.cparser.sections()
+    assert ["res.qrc"] == config.get_qrcs()
 
 
 def test_new_qrc(config):
@@ -35,7 +35,14 @@ def test_new_qrc(config):
 
     # Check qrc file has been added to project the config file
     config.read()
-    assert "test" in config.cparser.sections()
+    assert ["test.qrc"] == config.get_qrcs()
+
+
+def test_two_new_qrcs(config):
+    runner = CliRunner()
+    runner.invoke(pyqtcli, ["new"])
+    runner.invoke(pyqtcli, ["new", "--qrc", "qrc/test.qrc"])
+    assert ["res.qrc", "test.qrc"] == config.get_qrcs()
 
 
 def test_new_duplication(config):

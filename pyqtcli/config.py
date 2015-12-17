@@ -62,8 +62,45 @@ class PyqtcliConfig():
         """Return a list of qrc names contained in the project config file."""
         self.read()
         sections = self.cparser.sections()
-        sections.remove("project")
-        return sections
+        return [section for section in sections if section.endswith(".qrc")]
+
+    def add_dir(self, qrc, directory, commit=True):
+        """Add a directory to dirs key from given qrc section.
+
+        Args:
+            qrc (str): Qrc file name like "res.qrc"
+            directory (str): Relative path between directory to add and qrc.
+            commit (bool): if true save changes in the config file.
+
+        Returns:
+            bool: True if the operation is successfull otherwise False.
+
+        """
+        try:
+            dirs = self.cparser[qrc].get("dirs", None)
+            if dirs is None:
+                self.cparser.set(qrc, "dirs", directory)
+            else:
+                self.cparser.set(qrc, "dirs", dirs + ", " + directory)
+
+            if commit:
+                self.save()
+
+            return True
+        except KeyError:
+            return False
+
+    def get_dirs(self, qrc):
+        """Return registered resources dirs for the given qrc
+
+        Args:
+            qrc (str): Qrc file name like "res.qrc"
+
+        Returns:
+            list: A list of relative path to resources folders from qrc file.
+        """
+        dirs = self.cparser.get(qrc, "dirs", fallback=[])
+        return dirs.split(", ") if dirs else dirs
 
     def save(self):
         """Save changes."""

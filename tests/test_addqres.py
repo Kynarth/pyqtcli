@@ -38,7 +38,7 @@ def test_simple_addqres(config, resources):
 
     # Check res_folder has beed added to dirs variable of config file
     config.read()
-    assert config.cparser["res"].get("dirs") == "resources"
+    assert config.cparser["res.qrc"].get("dirs") == "resources"
 
 
 def test_complexe_addqres(config, resources):
@@ -78,7 +78,7 @@ def test_complexe_addqres(config, resources):
 
     # Check res_folder has beed added to dirs variable of config file
     config.read()
-    assert config.cparser["res"].get("dirs") == "test0/test/resources"
+    assert config.cparser["res.qrc"].get("dirs") == "test0/test/resources"
 
 
 def test_addqres_in_non_project_qrc(config, resources):
@@ -93,3 +93,20 @@ def test_addqres_in_non_project_qrc(config, resources):
 
     result = runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
     assert result.output.startswith("Qrc: res.qrc isn't part of the project.")
+
+
+def test_addqres_duplication(config, resources):
+    runner = CliRunner()
+
+    # Generate a qrc file named res and update config file
+    runner.invoke(pyqtcli, ["new"])
+
+    # Add qresources corresponding to resources folder
+    runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
+
+    # Add the same qresource
+    result = runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
+
+    assert result.output.startswith(
+        "You have already added this resources folder to res.qrc."
+    )

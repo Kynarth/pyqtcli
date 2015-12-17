@@ -11,10 +11,40 @@ def test_initial_config_file(config):
 
 
 def test_get_qrcs(config):
-    config.cparser.add_section("res")
+    config.cparser.add_section("res.qrc")
+    config.cparser.add_section("test.qrc")
     config.cparser.add_section("test")
 
-    assert config.get_qrcs() == ["res", "test"]
+    assert config.get_qrcs() == ["res.qrc", "test.qrc"]
+
+
+def test_add_dirs(config):
+    config.cparser.add_section("res.qrc")
+
+    # test while dirs key does not exist
+    config.add_dir("res.qrc", "resource")
+    assert config.cparser["res.qrc"]["dirs"] == "resource"
+
+    # test dirs has already one value
+    config.add_dir("res.qrc", "test/resource")
+    assert config.cparser["res.qrc"]["dirs"] == "resource, test/resource"
+
+    # test dirs has already two values
+    config.add_dir("res.qrc", "../a")
+    assert config.cparser["res.qrc"]["dirs"] == "resource, test/resource, ../a"
+
+    # Test for a nonexistant section
+    assert config.add_dir("test.qrc", "resources") is False
+
+
+def test_get_dirs(config):
+    assert config.get_dirs("res.qrc") == []
+
+    config.cparser.add_section("res.qrc")
+    config.cparser.set("res.qrc", "dirs", "resources")
+    config.add_dir("res.qrc", "test/resources")
+
+    assert config.get_dirs("res.qrc") == ["resources", "test/resources"]
 
 
 def test_find_project_config(config):
