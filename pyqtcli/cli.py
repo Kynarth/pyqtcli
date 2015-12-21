@@ -9,6 +9,7 @@ from pyqtcli.qrc import read_qrc
 from pyqtcli.qrc import fill_qresource
 from pyqtcli.config import PyqtcliConfig
 from pyqtcli.utils import recursive_file_search
+from pyqtcli.exception import PyqtcliConfigError
 from pyqtcli.makealias import write_alias
 
 
@@ -62,8 +63,8 @@ def new(config, file_type, path, verbose):
         # Verify qrc file doesn't already exists
         if name in config.get_qrcs():
             click.secho(
-                "A qrc file named \'{}\' already exists".format(name),
-                fg="red", bold=True
+                "Error: A qrc file named \'{}\' already exists".format(name),
+                fg="red", bold=True, err=True
             )
             raise click.Abort()
 
@@ -76,14 +77,15 @@ def new(config, file_type, path, verbose):
             click.secho("Qrc file \'{}\' has been created.".format(path))
 
 
-@pyqtcli.command("addqres", short_help="Create a <qresource> element in qrc.")
+@pyqtcli.command("addqres", short_help="Create a <qresource> element in qrc")
 @click.option("-a", "--alias", is_flag=True,
-              help="Create aliases for <file> elements.")
+              help="Create aliases for <file> elements")
 @click.option("-v", "--verbose", is_flag=True, help="Explain the process")
 @click.argument("qrc", type=click.Path(exists=True, dir_okay=False))
-@click.argument("res_folder", type=click.Path(exists=True, file_okay=False))
+@click.argument("res_folders", nargs=-1,
+                type=click.Path(exists=True, file_okay=False))
 @pass_config
-def addqres(config, qrc, res_folder, alias, verbose):
+def addqres(config, qrc, res_folders, alias, verbose):
     """
     Add <qresource> element with a prefix attribute set to the base name of
     the given folder of resources. All resources contained in this folder are
@@ -91,54 +93,92 @@ def addqres(config, qrc, res_folder, alias, verbose):
     """
     qrc_name = os.path.basename(qrc)
 
-    # rel_path => relative path of res_folder from qrc file
-    rel_path = os.path.relpath(res_folder, os.path.dirname(qrc))
+    # Process each resource folders passed
+    for folder in res_folders:
+        # rel_path => relative path of folder from qrc file
+        rel_path = os.path.relpath(folder, os.path.dirname(qrc))
 
-    # Check if the given qrc file is recorded in project config file
-    qrcs = config.get_qrcs()
-    if qrc_name not in qrcs:
-        click.secho(
-            "Qrc: {} isn't part of the project.".format(qrc),
-            fg="yellow", bold=True
-        )
-        raise click.Abort()
+        # Check if given resources folder has already been recorded
+        if rel_path in config.get_dirs(qrc_name):
+            click.secho(
+                "Warning: You have already added \'{}\' to {}.".format(
+                    folder, qrc_name), fg="yellow", bold=True)
+            continue
 
-    # Check if given res_folder has already been recorded
-    if rel_path in config.get_dirs(qrc_name):
-        click.secho(
-            "You have already added this resources folder to {}.".format(
-                qrc_name),
-            fg="yellow", bold=True
-        )
-        raise click.Abort()
+        # Add folder to dirs variable in the config file
+        try:
+            config.add_dirs(qrc_name, rel_path, commit=False)
+        except PyqtcliConfigError:
+            click.secho(
+                "Error: {} isn't part of the project.".format(qrc),
+                fg="yellow", bold=True
+            )
+            raise click.Abort()
 
-    # Add res_folder to dirs variable in the config file
-    if not config.add_dir(qrc_name, rel_path, commit=False):
-        click.secho("An error occured while adding {} to config file.".format(
-            res_folder))
-        raise click.Abort()
+        # Add qresource to qrc file
+        qrcfile = read_qrc(qrc)
+        prefix = "/" + os.path.basename(folder)
+        qrcfile.add_qresource(prefix)
+        fill_qresource(qrcfile, folder, prefix)
+        qrcfile.build()
 
-    # Add qresource to qrc file
-    qrcfile = read_qrc(qrc)
-    qrcfile.add_qresource("/" + os.path.basename(res_folder))
-    fill_qresource(qrcfile, res_folder)
-    qrcfile.build()
+        if alias:
+            write_alias([qrcfile.path], verbose)
 
-    if alias:
-        write_alias([qrcfile.path], verbose)
+        config.save()
 
-    config.save()
+        if verbose:
+            click.secho(
+                "qresource with prefix: \'{}\' has been recorded in {}.".format(
+                    "/" + os.path.basename(folder), qrc), fg="green", bold=True
+            )
 
-    if verbose:
-        click.secho(
-            "Folder: \'{}\' has been recorded in {}.".format(res_folder, qrc)
-        )
+
+@pyqtcli.command("rmqres", short_help="Remove a <qresource> element in qrc")
+@click.option("-v", "--verbose", is_flag=True, help="Explain the process")
+@click.argument("qrc", type=click.Path(exists=True, dir_okay=False))
+@click.argument("res_folders", nargs=-1,
+                type=click.Path(exists=True, file_okay=False))
+@pass_config
+def rmqres(config, qrc, res_folders, verbose):
+    """
+    Remove a <qresource> element with a prefix attribute set to the base name
+    of the given folder of resources. All <file> subelements are removed too.
+    """
+    qrc_name = os.path.basename(qrc)
+
+    for folder in res_folders:
+        # rel_path => relative path of folder from qrc file
+        rel_path = os.path.relpath(folder, os.path.dirname(qrc))
+
+        # remove folder to dirs variable in the config file
+        try:
+            config.rm_dirs(qrc_name, rel_path, commit=False)
+        except PyqtcliConfigError:
+            click.secho(
+                "Error: {} isn't part of the project.".format(qrc),
+                fg="yellow", bold=True
+            )
+            raise click.Abort()
+
+        # Remove qresource to qrc file
+        qrcfile = read_qrc(qrc)
+        prefix = "/" + os.path.basename(folder)
+        qrcfile.remove_qresource(prefix)
+        qrcfile.build()
+
+        config.save()
+
+        if verbose:
+            click.secho(
+                "Resources folder: \'{}\' has been removed in {}.".format(
+                    folder, qrc), fg="green", bold=True)
 
 
 @pyqtcli.command("makealias", short_help="Add aliases to qrc's resources")
 @click.option("-v", "--verbose", is_flag=True, help="Explain the process")
 @click.option("-r", "--recursive", is_flag=True,
-              help="Search recursively for qrc files to process.")
+              help="Search recursively for qrc files to process")
 @click.argument('qrc_files', nargs=-1,
                 type=click.Path(exists=True, dir_okay=False))
 def makealias(qrc_files, recursive, verbose):
@@ -149,7 +189,9 @@ def makealias(qrc_files, recursive, verbose):
         # Check if recursive option find qrc files
         if recursive_qrc_files == ():
             click.secho(
-                "Error: Could not find any qrc files", err=True, fg="red")
+                "Error: Could not find any qrc files",
+                err=True, fg="red", bold=True
+            )
         else:
             write_alias(recursive_qrc_files, verbose)
 
@@ -157,4 +199,5 @@ def makealias(qrc_files, recursive, verbose):
     if qrc_files:
         write_alias(qrc_files, verbose)
     elif not recursive:
-        click.secho("Warning: No qrc files was given to process.", fg="yellow")
+        click.secho("Warning: No qrc files was given to process.",
+                    fg="yellow", bold=True)

@@ -1,47 +1,44 @@
 import os
 import shutil
 
-from lxml import etree
-from pyqtcli.cli import pyqtcli
 from click.testing import CliRunner
+
+from pyqtcli.qrc import read_qrc
+from pyqtcli.cli import pyqtcli
 from pyqtcli.test.qrc import QRCTestFile
 
 
-def test_simple_addqres(config, resources):
+def test_simple_addqres(config, test_resources):
     runner = CliRunner()
 
     # Generate a qrc file named res and update config file
     runner.invoke(pyqtcli, ["new"])
 
-    # test addqres with default option
+    # Test addqres with default option
     result = runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
     assert result.exit_code == 0
 
     # Parse qrc file
-    tree = etree.parse("res.qrc")
-    root = tree.getroot()
+    qrcfile = read_qrc("res.qrc")
 
     # Check qresource has been added
-    qres_prefix = []  # Elements matching qresource with prefix = '/resources'
-    for qresource in root.iter(tag="qresource"):
-        if qresource.attrib.get("prefix") == "/resources":
-            qres_prefix.append(qresource)
-    assert len(qres_prefix) == 1
+    qrcfile.get_qresource("/resources")
 
-    # Check file subelement in qresource
-    rel_path = os.path.relpath("resources", ".")
-    nb_res = 0
-    for resource in qres_prefix[0].iter(tag="file"):
-        assert resource.text.startswith(rel_path)
-        nb_res += 1
-    assert nb_res == resources
+    # Check file subelements in qresource
+    resources = qrcfile.list_resources("/resources")
 
-    # Check res_folder has beed added to dirs variable of config file
+    for root, dirs, files in os.walk("resources"):
+        for f in files:
+            assert os.path.join(root, f) in resources
+
+    assert len(resources) == test_resources
+
+    # Check res_folder has been added to dirs variable of config file
     config.read()
     assert config.cparser["res.qrc"].get("dirs") == "resources"
 
 
-def test_complexe_addqres(config, resources):
+def test_complexe_addqres(config, test_resources):
     runner = CliRunner()
 
     # Make a new dir to complexify path between resources folder and qrc file
@@ -51,37 +48,93 @@ def test_complexe_addqres(config, resources):
     # Generate a qrc file named res and update config file
     runner.invoke(pyqtcli, ["new", "../res.qrc"])
 
-    # test addqres with default option
     result = runner.invoke(
         pyqtcli, ["addqres", "-a", "-v", "../res.qrc", "test/resources"]
     )
     assert result.exit_code == 0
 
+    # Get in res.qrc directory
+    os.chdir("..")
+
     # Parse qrc file
-    tree = etree.parse("../res.qrc")
-    root = tree.getroot()
+    qrcfile = read_qrc("res.qrc")
 
     # Check qresource has been added
-    qres_prefix = []  # Elements matching qresource with prefix = '/resources'
-    for qresource in root.iter(tag="qresource"):
-        if qresource.attrib.get("prefix") == "/resources":
-            qres_prefix.append(qresource)
-    assert len(qres_prefix) == 1
+    qrcfile.get_qresource("/resources")
 
-    # Check file subelement in qresource
-    rel_path = os.path.relpath("test/resources", "..")
-    nb_res = 0
-    for resource in qres_prefix[0].iter(tag="file"):
-        assert resource.text.startswith(rel_path)
-        nb_res += 1
-    assert nb_res == resources
+    # Check file subelements in qresource
+    resources = qrcfile.list_resources("/resources")
 
-    # Check res_folder has beed added to dirs variable of config file
+    for root, dirs, files in os.walk("test/resources"):
+        for f in files:
+            assert os.path.join(root, f) in resources
+
+    assert len(resources) == test_resources
+
+    # Check res_folder has been added to dirs variable of config file
     config.read()
     assert config.cparser["res.qrc"].get("dirs") == "test0/test/resources"
 
+    # Check resources' alias
+    files = qrcfile.list_files("/resources")
 
-def test_addqres_in_non_project_qrc(config, resources):
+    for resource in files:
+        assert os.path.basename(resource.text) == resource.attrib["alias"]
+
+
+def test_addqres_two_times(config, test_resources):
+    runner = CliRunner()
+
+    # Copy resources dir to make another resource folder in another directory
+    os.mkdir("test")
+    shutil.copytree("resources", "test/other_res")
+
+    # Generate a qrc file named res and update config file
+    runner.invoke(pyqtcli, ["new", "res.qrc"])
+
+    # Create to qresources in res.qrc
+    runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
+    runner.invoke(pyqtcli, ["addqres", "-a", "res.qrc", "test/other_res"])
+
+    # Parse qrc file
+    qrcfile = read_qrc("res.qrc")
+
+    # Check qresources has been added
+    qrcfile.get_qresource("/resources")
+    qrcfile.get_qresource("/other_res")
+
+    # Check file subelements in qresource "/resources"
+    resources = qrcfile.list_resources("/resources")
+
+    for root, dirs, files in os.walk("resources"):
+        for f in files:
+            assert os.path.join(root, f) in resources
+
+    assert len(resources) == test_resources
+
+    # Check file subelements in qresource "/other_res"
+    resources = qrcfile.list_resources("/other_res")
+
+    for root, dirs, files in os.walk("test/other_res"):
+        for f in files:
+            assert os.path.join(root, f) in resources
+
+    assert len(resources) == test_resources
+
+    # Check resources' alias in other_res qresource
+    files = qrcfile.list_files("/other_res")
+
+    for resource in files:
+        assert os.path.basename(resource.text) == resource.attrib["alias"]
+
+    # Check thaht the two res foldesr have been added to dirs variable of
+    # config file
+    config.read()
+    assert sorted(config.get_dirs("res.qrc")) == sorted([
+        "resources", "test/other_res"])
+
+
+def test_addqres_in_non_project_qrc(config, test_resources):
     runner = CliRunner()
 
     (
@@ -92,10 +145,10 @@ def test_addqres_in_non_project_qrc(config, resources):
     )
 
     result = runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
-    assert result.output.startswith("Qrc: res.qrc isn't part of the project.")
+    assert result.output.startswith("Error: res.qrc isn't part of the project.")
 
 
-def test_addqres_duplication(config, resources):
+def test_addqres_duplication(config, test_resources):
     runner = CliRunner()
 
     # Generate a qrc file named res and update config file
@@ -108,5 +161,5 @@ def test_addqres_duplication(config, resources):
     result = runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
 
     assert result.output.startswith(
-        "You have already added this resources folder to res.qrc."
+        "Warning: You have already added \'resources\' to res.qrc."
     )

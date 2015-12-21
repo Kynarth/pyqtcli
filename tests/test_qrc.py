@@ -1,10 +1,10 @@
 import os
-import re
 import pytest
 
-from lxml import etree
 from pyqtcli.qrc import read_qrc
 from pyqtcli.test.qrc import QRCTestFile
+from pyqtcli.exception import QresourceError
+from pyqtcli.exception import QRCFileError
 
 
 def test_simple_qrc():
@@ -27,8 +27,7 @@ def test_complexe_qrc():
 
 
 def test_nonexistent_qresource():
-    regex = re.compile(r"Error:.*")
-    with pytest.raises(BaseException) as e:
+    with pytest.raises(QresourceError) as e:
         (
             QRCTestFile("res")
             .add_qresource().add_file("file.txt")
@@ -36,23 +35,20 @@ def test_nonexistent_qresource():
             .add_file("test.txt", "prefix")
             .build()
         )
-    assert regex.search(str(e)).group() == (
-        "Error: Qresource with prefix: 'prefix' does not exist."
+    assert str(e.value) == (
+        "Error: No <qresource> node corresponding to \'prefix\' prefix"
     )
 
 
 def test_duplication_of_qresource():
-    regex = re.compile(r"Error:.*")
-    with pytest.raises(SystemExit) as e:
+    with pytest.raises(QresourceError) as e:
         (
             QRCTestFile("res")
             .add_qresource().add_file("file.txt")
             .add_qresource().add_file("images/test.txt")
             .build()
         )
-    assert regex.search(str(e)).group() == (
-        "Error: Qresource with prefix: 'None' already exists."
-    )
+    assert str(e.value) == "Error: qresource with prefix: \'/\' already exists"
 
 
 def test_get_qresource():
@@ -65,8 +61,13 @@ def test_get_qresource():
 
     assert qrc.get_qresource("/images").attrib.get("prefix") == "/images"
 
+    with pytest.raises(QresourceError) as e:
+        qrc.get_qresource("/test")
+    assert str(e.value) == (
+        "Error: No <qresource> node corresponding to \'/test\' prefix")
 
-def test_read_qrc():
+
+def test_remove_qresource():
     qrc = (
         QRCTestFile("res")
         .add_qresource().add_file("file.txt")
@@ -74,15 +75,76 @@ def test_read_qrc():
         .build()
     )
 
+    qresource = qrc.remove_qresource("/images")
+    assert qresource not in qrc._qresources
+
+    with pytest.raises(QresourceError) as e:
+        qrc.get_qresource("/images")
+    assert str(e.value) == (
+        "Error: No <qresource> node corresponding to \'/images\' prefix")
+
+
+def test_list_resources(config):
+    qrc = (
+        QRCTestFile("res.qrc")
+        .add_qresource().add_file("test.txt").add_file("file.txt")
+        .add_qresource("/images").add_file("images/logo.png")
+        .add_file("images/fg.bmp")
+        .build()
+    )
+
+    assert sorted(qrc.list_resources("/")) == sorted(["test.txt", "file.txt"])
+    assert sorted(qrc.list_resources("/images")) == sorted(
+        ["images/logo.png", "images/fg.bmp"])
+
+    with pytest.raises(QresourceError) as e:
+        qrc.list_resources("/test")
+    assert str(e.value) == (
+        "Error: No <qresource> node corresponding to \'/test\' prefix")
+
+
+def test_list_files(config):
+    qrc = (
+        QRCTestFile("res.qrc")
+        .add_qresource().add_file("test.txt").add_file("file.txt")
+        .add_qresource("/images").add_file("images/logo.png")
+        .add_file("images/fg.bmp")
+        .build()
+    )
+
+    root_qresource = qrc.get_qresource("/")
+    root_files = [r_file for r_file in root_qresource.iter(tag='file')]
+    assert qrc.list_files("/") == root_files
+
+    images_qresource = qrc.get_qresource("/images")
+    images_files = [r_file for r_file in images_qresource.iter(tag='file')]
+    assert qrc.list_files("/images") == images_files
+
+    with pytest.raises(QresourceError) as e:
+        qrc.list_files("/test")
+    assert str(e.value) == (
+        "Error: No <qresource> node corresponding to \'/test\' prefix")
+
+
+def test_read_qrc():
+    qrc = (
+        QRCTestFile("res")
+        .add_qresource().add_file("file.txt")
+        .add_qresource("/images").add_file("logo.png").add_file("fg.bmp")
+        .build()
+    )
+
     r_qrc = read_qrc("res.qrc")
 
     # check qrc content is the same
-    assert etree.tostring(qrc._tree, pretty_print=True) == \
-        etree.tostring(r_qrc._tree, pretty_print=True)
-
-    # Check that the last qresource added is the same
-    assert qrc._last_qresource.attrib == r_qrc._last_qresource.attrib
+    assert str(qrc) == str(r_qrc)
 
     # Check that the list of qresoource is identical
     for qres, r_qres in zip(qrc._qresources, r_qrc._qresources):
         assert qres.attrib == r_qres.attrib
+
+
+def test_read_qrc_on_nonexistant_qrc():
+    with pytest.raises(QRCFileError) as e:
+        read_qrc("res.qrc")
+    assert str(e.value) == "Error: Qrc file \'res.qrc\' does not exist."

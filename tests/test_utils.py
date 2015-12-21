@@ -3,7 +3,7 @@ import pytest
 from pyqtcli.utils import recursive_file_search
 
 
-def test_search_mp3_in_different_directories(resources):
+def test_search_mp3_in_different_directories(test_resources):
     mp3_files = recursive_file_search("mp3", "resources")
     assert sorted(mp3_files) == [
         'resources/musics/solos/best/best_solo1.mp3',

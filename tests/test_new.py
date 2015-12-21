@@ -7,7 +7,7 @@ from click.testing import CliRunner
 
 def test_new_default(config):
     runner = CliRunner()
-    result = runner.invoke(pyqtcli, ["new"])
+    result = runner.invoke(pyqtcli, ["new", "-v"])
 
     # Check qrc file is generated
     assert result.exit_code == 0
@@ -20,6 +20,9 @@ def test_new_default(config):
     # Check qrc file has been added to project the config file
     config.read()
     assert ["res.qrc"] == config.get_qrcs()
+
+    # Test verbose
+    result.output == "Qrc file \'res.qrc\' has been created."
 
 
 def test_new_qrc(config):
@@ -50,5 +53,5 @@ def test_new_duplication(config):
     runner.invoke(pyqtcli, ["new"])
     result = runner.invoke(pyqtcli, ["new"])
     assert result.output.startswith(
-        "A qrc file named \'res.qrc\' already exists"
+        "Error: A qrc file named \'res.qrc\' already exists"
     )

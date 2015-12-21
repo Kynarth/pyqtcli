@@ -1,6 +1,7 @@
 import os
 import sys
 
+from lxml import etree
 from functools import wraps
 
 from pyqtcli.qrc import QRCFile
@@ -26,11 +27,14 @@ class QRCTestFile(QRCFile, GenerativeBase):
     """Generate a qrc file for tests with false resource directories and files.
 
     Attributes:
-        name (str): File name of the new qrc file.
-        path (optional[str]): Path to new qrc file dir.
+        name (str): File name of the new qrc file. Qrc extension is
+            automatically added.
+        path (optional[str]): Absolute ath to new qrc file.
+        dir_path (str): Absolute path to the qrc file directory.
         _qresources (list[etree.SubElement]): List of qresources created.
         _last_qresource (etree.SubElement): Last qresource created.
-
+        _root (etree.Element): Root element of qrc file.
+        _tree (etree.ElementTree): Qrc tree with added qresources and resources.
 
     Example:
         >>>(
@@ -47,9 +51,10 @@ class QRCTestFile(QRCFile, GenerativeBase):
 
     def __init__(self, name, path="."):
         super(QRCTestFile, self).__init__(name, path)
+        self._last_qresource = None
 
     @chain
-    def add_qresource(self, prefix=None):
+    def add_qresource(self, prefix="/"):
         """Create to the qresource subelement.
 
         Args:
@@ -58,6 +63,7 @@ class QRCTestFile(QRCFile, GenerativeBase):
 
         """
         super().add_qresource(prefix)
+        self._last_qresource = self._qresources[-1]
 
     @chain
     def add_file(self, resource, prefix=None):
@@ -69,7 +75,13 @@ class QRCTestFile(QRCFile, GenerativeBase):
             resource (str): Path to the resource.
 
         """
-        super().add_file(resource, prefix)
+        # Add the resource to qresource element corresponding to prefix or
+        # the last prefix used
+        if prefix:
+            qresource = self.get_qresource(prefix)
+            etree.SubElement(qresource, "file",).text = resource
+        else:
+            etree.SubElement(self._last_qresource, "file",).text = resource
 
         # Create directories of the resource if not exists
         dir_name = os.path.join(

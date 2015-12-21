@@ -27,7 +27,7 @@ def config():
 
 
 @pytest.fixture
-def resources():
+def test_resources():
     """Generate a folder of resources to test qrc file."""
     # Create sub folders
     os.mkdir("resources")

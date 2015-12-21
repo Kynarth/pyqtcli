@@ -89,11 +89,9 @@ def test_makealias_recursive():
         qrcs = [qrc, sub_qrc, sub_sub, other_sub]
 
         # Launch makerc command
-        result = runner.invoke(
+        runner.invoke(
             pyqtcli, ["makealias", "-v", "-r"]
         )
-
-        print("Verbose:\n" + result.output)
 
         # Assert all qrc resources get their alias
         for qrc_file in qrcs:

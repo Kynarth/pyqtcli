@@ -1,5 +1,8 @@
 import os
+import click
 import configparser
+
+from pyqtcli.exception import PyqtcliConfigError
 
 
 def find_project_config():
@@ -64,31 +67,85 @@ class PyqtcliConfig():
         sections = self.cparser.sections()
         return [section for section in sections if section.endswith(".qrc")]
 
-    def add_dir(self, qrc, directory, commit=True):
+    def add_dirs(self, qrc, directories, commit=True):
         """Add a directory to dirs key from given qrc section.
 
         Args:
             qrc (str): Qrc file name like "res.qrc"
-            directory (str): Relative path between directory to add and qrc.
+            directories (str or list): Relative paths between directories and
+                qrc.
+                ex: "res, test/res, ../res" or ["res"] if one dir in a list
             commit (bool): if true save changes in the config file.
 
-        Returns:
-            bool: True if the operation is successfull otherwise False.
+        Raises:
+            PyqtcliConfigError: Raised when `qrc` isn't recorded in the
+                project config file.
 
         """
+        # Set -> eliminate duplication
+        if isinstance(directories, list):
+            directories = ", ".join(set(directories))
+        else:
+            directories = ", ".join(set(directories.split(", ")))
+
         try:
             dirs = self.cparser[qrc].get("dirs", None)
             if dirs is None:
-                self.cparser.set(qrc, "dirs", directory)
+                self.cparser.set(qrc, "dirs", directories)
             else:
-                self.cparser.set(qrc, "dirs", dirs + ", " + directory)
+                self.cparser.set(qrc, "dirs", dirs + ", " + directories)
 
             if commit:
                 self.save()
 
-            return True
         except KeyError:
-            return False
+            raise PyqtcliConfigError(
+                "Error: No \'{}\' section in .pyqtclirc.".format(qrc))
+
+    def rm_dirs(self, qrc, directories, commit=True):
+        """Remove a directory from dirs key in the given qrc section.
+
+        Args:
+            qrc (str): Qrc file name like "res.qrc"
+            directories (str or list): Relative paths between directories and
+                qrc.
+                ex: "res, test/res, ../res" or ["res"] for one dir in a list
+            commit (bool): if true save changes in the config file.
+
+        Raises:
+            PyqtcliConfigError: Raised when `qrc` isn't recorded in the
+                project config file.
+
+        """
+        try:
+            dirs = self.cparser[qrc].get("dirs", None)
+
+            if not isinstance(directories, list):
+                directories = directories.split(", ")
+
+            if dirs is None:  # There is no resources folders recorded yet
+                msg = ("Warning: There is no recorded resources folders "
+                       "to delete in {}").format(qrc)
+                click.secho(msg, fg="yellow", bold=True)
+            else:
+                # Delete each relative path contains in directory argument
+                dirs = dirs.split(", ")
+                for rel_path in directories:
+                    try:
+                        dirs.remove(rel_path)
+                    except ValueError:
+                        msg = ("Warning: directory \'{}\' isn't recorded "
+                               "for \'{}\' and so cannot be deleted".format(
+                                   rel_path, qrc))
+                        click.secho(msg, fg="yellow", bold=True)
+                self.cparser.set(qrc, "dirs", ", ".join(dirs))
+
+                if commit:
+                    self.save()
+
+        except KeyError:
+            raise PyqtcliConfigError(
+                "Error: No \'{}\' section in .pyqtclirc.".format(qrc))
 
     def get_dirs(self, qrc):
         """Return registered resources dirs for the given qrc
@@ -98,9 +155,15 @@ class PyqtcliConfig():
 
         Returns:
             list: A list of relative path to resources folders from qrc file.
+
+        Raises:
+            PyqtcliConfigError: if qrc
         """
         dirs = self.cparser.get(qrc, "dirs", fallback=[])
-        return dirs.split(", ") if dirs else dirs
+        if dirs == "":
+            return []
+        else:
+            return dirs.split(", ") if dirs else dirs
 
     def save(self):
         """Save changes."""

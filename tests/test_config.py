@@ -1,7 +1,9 @@
 import os
+import pytest
 
 from pyqtcli.config import PyqtcliConfig
 from pyqtcli.config import find_project_config
+from pyqtcli.exception import PyqtcliConfigError
 
 
 def test_initial_config_file(config):
@@ -22,19 +24,62 @@ def test_add_dirs(config):
     config.cparser.add_section("res.qrc")
 
     # test while dirs key does not exist
-    config.add_dir("res.qrc", "resource")
+    config.add_dirs("res.qrc", "resource")
     assert config.cparser["res.qrc"]["dirs"] == "resource"
 
-    # test dirs has already one value
-    config.add_dir("res.qrc", "test/resource")
+    # test dirs has already one value_passing_a_list
+    config.add_dirs("res.qrc", ["test/resource"])
     assert config.cparser["res.qrc"]["dirs"] == "resource, test/resource"
 
-    # test dirs has already two values
-    config.add_dir("res.qrc", "../a")
-    assert config.cparser["res.qrc"]["dirs"] == "resource, test/resource, ../a"
+    # test dirs has already two values with multiple dirs
+    config.add_dirs("res.qrc", "../a, test/other_res")
+    assert sorted(config.cparser["res.qrc"]["dirs"].split(", ")) == sorted([
+        "resource", "test/resource", "../a", "test/other_res"])
 
-    # Test for a nonexistant section
-    assert config.add_dir("test.qrc", "resources") is False
+
+def test_add_dirs_with_nonexistant_qrc_section(config):
+    with pytest.raises(PyqtcliConfigError) as e:
+        config.add_dirs("test.qrc", "resources")
+    assert str(e.value) == "Error: No \'test.qrc\' section in .pyqtclirc."
+
+
+def test_rm_dirs(config):
+    config.cparser.add_section("res.qrc")
+    config.add_dirs("res.qrc", "resource")
+    config.rm_dirs("res.qrc", "resource")
+    assert config.get_dirs("res.qrc") == []
+
+
+def test_rm_dirs_multiple(config):
+    config.cparser.add_section("res.qrc")
+    config.add_dirs("res.qrc", ["resource, test/resource, ../a"])
+    config.rm_dirs("res.qrc", "resource, ../a")
+    assert config.get_dirs("res.qrc") == ["test/resource"]
+
+
+def test_rm_dirs_nonexistant_dir_in_empty_dirs_key(config, capsys):
+    config.cparser.add_section("res.qrc")
+    config.rm_dirs("res.qrc", "resources")
+    out, err = capsys.readouterr()
+    assert out.strip() == ("Warning: There is no recorded resources folders "
+                           "to delete in res.qrc")
+    config.get_dirs("res.qrc") == []
+
+
+def test_rm_dirs_with_nonrecorded_res_folder(config, capsys):
+    config.cparser.add_section("res.qrc")
+    config.add_dirs("res.qrc", "resources")
+    config.rm_dirs("res.qrc", "test")
+    out, err = capsys.readouterr()
+    assert out.strip() == ("Warning: directory \'test\' isn't recorded "
+                           "for \'res.qrc\' and so cannot be deleted")
+    config.get_dirs("res.qrc") == ["resources"]
+
+
+def test_rm_dirs_with_nonexistant_qrc_section(config):
+    with pytest.raises(PyqtcliConfigError) as e:
+        config.rm_dirs("test.qrc", "resources")
+    assert str(e.value) == "Error: No \'test.qrc\' section in .pyqtclirc."
 
 
 def test_get_dirs(config):
@@ -42,7 +87,7 @@ def test_get_dirs(config):
 
     config.cparser.add_section("res.qrc")
     config.cparser.set("res.qrc", "dirs", "resources")
-    config.add_dir("res.qrc", "test/resources")
+    config.add_dirs("res.qrc", "test/resources")
 
     assert config.get_dirs("res.qrc") == ["resources", "test/resources"]
 
