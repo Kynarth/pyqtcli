@@ -123,7 +123,7 @@ class QRCFile():
         # Add the resource to qresource element
         etree.SubElement(qresource, "file",).text = resource
 
-    def list_resources(self, prefix):
+    def list_resources(self, prefix=None):
         """
         List all <file> subelements text from the qresource containing passed
         prefix attribute.
@@ -133,17 +133,24 @@ class QRCFile():
 
         Returns:
             list: A list of all resources path contained in qresource
-                designated by the `prefix`.
+                designated by the `prefix` or all qrc's resources.
 
         Raises:
             QresourceError: Raised when the passed prefix doesn't correspond
                 to any existing <qresource> node in the qrc file.
 
         """
-        qresource = self.get_qresource(prefix)
-        return [resource.text for resource in qresource.iter(tag="file")]
+        if prefix:
+            qresource = self.get_qresource(prefix)
+            return [resource.text for resource in qresource.iter(tag="file")]
+        else:
+            resources = []
+            for qresource in self._qresources:
+                for resource in qresource.iter(tag="file"):
+                    resources.append(resource.text)
+            return resources
 
-    def list_files(self, prefix):
+    def list_files(self, prefix=None):
         """
         List all <file> subelements from the qresource containing passed
         prefix attribute.
@@ -152,16 +159,23 @@ class QRCFile():
             prefix (str): Prefix attribute like => "/" for qresource element.
 
         Returns:
-            list: A list of all resources path contained in qresource
-                designated by the `prefix`.
+            list: A list of all <file> subelement contained in qresource
+                designated by the `prefix` or all qrc's <file> if no prefix.
 
         Raises:
             QresourceError: Raised when the passed prefix doesn't correspond
                 to any existing <qresource> node in the qrc file.
 
         """
-        qresource = self.get_qresource(prefix)
-        return [resource for resource in qresource.iter(tag="file")]
+        if prefix:
+            qresource = self.get_qresource(prefix)
+            return [resource for resource in qresource.iter(tag="file")]
+        else:
+            files = []
+            for qresource in self._qresources:
+                for resource in qresource.iter(tag="file"):
+                    files.append(resource)
+            return files
 
     def build(self):
         """Generate qrc file in function avec path and name attribute."""

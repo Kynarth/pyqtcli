@@ -10,6 +10,7 @@ from pyqtcli.qrc import fill_qresource
 from pyqtcli.config import PyqtcliConfig
 from pyqtcli.utils import recursive_file_search
 from pyqtcli.exception import PyqtcliConfigError
+from pyqtcli.makerc import process_qrc_files
 from pyqtcli.makealias import write_alias
 
 
@@ -28,7 +29,6 @@ def pyqtcli():
 @click.option("-y", "--yes", is_flag=True, help="Send 'yes' anwser to prompt")
 def init(quiet, yes):
     """Initialize pyqtcli for the current PyQt5 project."""
-
     # Verify that another pyqtcli config file does not already exist
     if os.path.isfile(PyqtcliConfig.INI_FILE) and not yes:
         if click.confirm("Do you want to reset pyqtcli config?", abort=True):
@@ -74,7 +74,9 @@ def new(config, file_type, path, verbose):
         config.save()
 
         if verbose:
-            click.secho("Qrc file \'{}\' has been created.".format(path))
+            click.secho(
+                "Qrc file \'{}\' has been created.".format(path),
+                fg="green", bold=True)
 
 
 @pyqtcli.command("addqres", short_help="Create a <qresource> element in qrc")
@@ -190,14 +192,42 @@ def makealias(qrc_files, recursive, verbose):
         if recursive_qrc_files == ():
             click.secho(
                 "Error: Could not find any qrc files",
-                err=True, fg="red", bold=True
-            )
+                err=True, fg="red", bold=True)
+            raise click.Abort()
         else:
             write_alias(recursive_qrc_files, verbose)
 
     # Process given files or warns user if none
     if qrc_files:
         write_alias(qrc_files, verbose)
+    elif not recursive:
+        click.secho("Warning: No qrc files was given to process.",
+                    fg="yellow", bold=True)
+
+
+@pyqtcli.command("makerc", short_help="Generate python qrc module to given qrc")
+@click.option("-v", "--verbose", is_flag=True, help="Explain the process")
+@click.option("-r", "--recursive", is_flag=True,
+              help="Search recursively for qrc files to process.")
+@click.argument('qrc_files', nargs=-1,
+                type=click.Path(exists=True, dir_okay=False))
+def makerc(qrc_files, recursive, verbose):
+    """Generate python module for corresponding given qrc files."""
+    # Check all qrc files recursively
+    if recursive:
+        recursive_qrc_files = recursive_file_search("qrc")
+
+        # Check if recursive option find qrc files
+        if recursive_qrc_files == ():
+            click.secho(
+                "Error: Could not find any qrc files",
+                err=True, fg="red", bold=True)
+        else:
+            process_qrc_files(recursive_qrc_files, verbose)
+
+    # Process given files or warns user if none
+    if qrc_files:
+        process_qrc_files(qrc_files, verbose)
     elif not recursive:
         click.secho("Warning: No qrc files was given to process.",
                     fg="yellow", bold=True)

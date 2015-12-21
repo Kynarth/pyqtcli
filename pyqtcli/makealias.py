@@ -3,7 +3,8 @@ import click
 
 from lxml import etree
 
-WARNING_TEMPLATE = "Warning: Alias '{}' already exists in '{}' at prefix '{}'."
+WARNING_TEMPLATE = (
+    "Warning: Alias \'{}\' already exists in \'{}\' at prefix \'{}\'.")
 
 
 def write_alias(qrc_files, verbose):
@@ -26,7 +27,8 @@ def write_alias(qrc_files, verbose):
 
         # Inform which qrc file is processed
         if verbose:
-            click.echo("Current file: {}".format(qrc_file))
+            click.secho("Current file: {}".format(qrc_file),
+                        fg="green", bold=True)
 
         # Iterate over each qresource containing file resources
         for qresource in root.iter(tag="qresource"):
@@ -42,8 +44,8 @@ def write_alias(qrc_files, verbose):
 
                         # Inform which alias is given to the current resource
                         if verbose:
-                            click.echo("resource: '{}' => {}".format(
-                                resource.text, alias))
+                            click.secho("resource: '{}' => {}".format(
+                                resource.text, alias), fg="green", bold=True)
                 else:
                     # Add same alias warning
                     warnings.append(WARNING_TEMPLATE.format(
@@ -61,4 +63,4 @@ def write_alias(qrc_files, verbose):
     # Warning user of which resources that could not receive alias
     # because of duplication
     for message in warnings:
-        click.secho(message, fg="yellow")
+        click.secho(message, fg="yellow", bold=True)

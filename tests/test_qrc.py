@@ -93,10 +93,17 @@ def test_list_resources(config):
         .build()
     )
 
+    # Test list of resources for each qresources
     assert sorted(qrc.list_resources("/")) == sorted(["test.txt", "file.txt"])
     assert sorted(qrc.list_resources("/images")) == sorted(
         ["images/logo.png", "images/fg.bmp"])
 
+    # Test list of resources for all qresources
+    assert sorted(qrc.list_resources()) == sorted(
+        ["test.txt", "file.txt", "images/logo.png", "images/fg.bmp"]
+    )
+
+    # Test for a nonexistant qresource
     with pytest.raises(QresourceError) as e:
         qrc.list_resources("/test")
     assert str(e.value) == (
@@ -112,6 +119,7 @@ def test_list_files(config):
         .build()
     )
 
+    # Test list of files for each qresources
     root_qresource = qrc.get_qresource("/")
     root_files = [r_file for r_file in root_qresource.iter(tag='file')]
     assert qrc.list_files("/") == root_files
@@ -120,6 +128,10 @@ def test_list_files(config):
     images_files = [r_file for r_file in images_qresource.iter(tag='file')]
     assert qrc.list_files("/images") == images_files
 
+    # Test list of files for all qresources
+    assert qrc.list_files() == [r_file for r_file in qrc._root.iter(tag="file")]
+
+    # Test for a nonexistant qresource
     with pytest.raises(QresourceError) as e:
         qrc.list_files("/test")
     assert str(e.value) == (
