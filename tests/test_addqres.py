@@ -12,7 +12,7 @@ def test_simple_addqres(config, test_resources):
     runner = CliRunner()
 
     # Generate a qrc file named res and update config file
-    runner.invoke(pyqtcli, ["new"])
+    runner.invoke(pyqtcli, ["new", "qrc"])
 
     # Test addqres with default option
     result = runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
@@ -35,7 +35,7 @@ def test_simple_addqres(config, test_resources):
 
     # Check res_folder has been added to dirs variable of config file
     config.read()
-    assert config.cparser["res.qrc"].get("dirs") == "resources"
+    config.get_dirs("res.qrc") == ["resources"]
 
 
 def test_complexe_addqres(config, test_resources):
@@ -46,7 +46,7 @@ def test_complexe_addqres(config, test_resources):
     shutil.move("resources", "test")
 
     # Generate a qrc file named res and update config file
-    runner.invoke(pyqtcli, ["new", "../res.qrc"])
+    runner.invoke(pyqtcli, ["new", "qrc", "../res.qrc"])
 
     result = runner.invoke(
         pyqtcli, ["addqres", "-a", "-v", "../res.qrc", "test/resources"]
@@ -73,7 +73,7 @@ def test_complexe_addqres(config, test_resources):
 
     # Check res_folder has been added to dirs variable of config file
     config.read()
-    assert config.cparser["res.qrc"].get("dirs") == "test0/test/resources"
+    assert config.get_dirs("res.qrc") == ["test/resources"]
 
     # Check resources' alias
     files = qrcfile.list_files("/resources")
@@ -90,7 +90,7 @@ def test_addqres_two_times(config, test_resources):
     shutil.copytree("resources", "test/other_res")
 
     # Generate a qrc file named res and update config file
-    runner.invoke(pyqtcli, ["new", "res.qrc"])
+    runner.invoke(pyqtcli, ["new", "qrc", "res.qrc"])
 
     # Create to qresources in res.qrc
     runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
@@ -127,7 +127,53 @@ def test_addqres_two_times(config, test_resources):
     for resource in files:
         assert os.path.basename(resource.text) == resource.attrib["alias"]
 
-    # Check thaht the two res foldesr have been added to dirs variable of
+    # Check that the two res folders have been added to dirs variable of
+    # config file
+    config.read()
+    assert sorted(config.get_dirs("res.qrc")) == sorted([
+        "resources", "test/other_res"])
+
+
+def test_addqres_with_two_res_folders(config, test_resources):
+    runner = CliRunner()
+
+    # Copy resources dir to make another resource folder in another directory
+    os.mkdir("test")
+    shutil.copytree("resources", "test/other_res")
+
+    # Generate a qrc file named res and update config file
+    runner.invoke(pyqtcli, ["new", "qrc", "res.qrc"])
+
+    # Create to qresources in res.qrc
+    runner.invoke(
+        pyqtcli, ["addqres", "res.qrc", "resources", "test/other_res"])
+
+    # Parse qrc file
+    qrcfile = read_qrc("res.qrc")
+
+    # Check qresources has been added
+    qrcfile.get_qresource("/resources")
+    qrcfile.get_qresource("/other_res")
+
+    # Check file subelements in qresource "/resources"
+    resources = qrcfile.list_resources("/resources")
+
+    for root, dirs, files in os.walk("resources"):
+        for f in files:
+            assert os.path.join(root, f) in resources
+
+    assert len(resources) == test_resources
+
+    # Check file subelements in qresource "/other_res"
+    resources = qrcfile.list_resources("/other_res")
+
+    for root, dirs, files in os.walk("test/other_res"):
+        for f in files:
+            assert os.path.join(root, f) in resources
+
+    assert len(resources) == test_resources
+
+    # Check that the two res folders have been added to dirs variable of
     # config file
     config.read()
     assert sorted(config.get_dirs("res.qrc")) == sorted([
@@ -152,7 +198,7 @@ def test_addqres_duplication(config, test_resources):
     runner = CliRunner()
 
     # Generate a qrc file named res and update config file
-    runner.invoke(pyqtcli, ["new"])
+    runner.invoke(pyqtcli, ["new", "qrc"])
 
     # Add qresources corresponding to resources folder
     runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])

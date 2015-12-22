@@ -212,7 +212,8 @@ def read_qrc(qrc):
     path, name = os.path.split(qrc)
     qrcfile = QRCFile(name, path)
 
-    qrcfile._tree = etree.parse(qrc)
+    parser = etree.XMLParser(remove_blank_text=True)
+    qrcfile._tree = etree.parse(qrc, parser)
     qrcfile._root = qrcfile._tree.getroot()
 
     for qresource in qrcfile._root.iter(tag="qresource"):
@@ -243,3 +244,38 @@ def fill_qresource(qrc, folder, prefix):
             path = os.path.relpath(resource_path, qrc.dir_path)
 
             qrc.add_file(path, prefix)
+
+
+def generate_qrc(qrc, res_folder, build=True):
+    """Generate qrc file with provided folder of resources. The root of the
+    resources folder correspond to qresource with "/" prefix. Resources that are
+    not in folders will be recorded a <file> subelement to "/" qresource.
+    For each directory present in the resources folder a qresource with
+    "/" + directory's name as prefix will be created. In each of these
+    directory, files are recursively recorded in corresponding qresource.
+
+    Args:
+        qrc_name (QRCFile): A newly created QRCFile.
+        res_folder (str): Path to the folder of resources.
+        build (bool): If True `QRCFile` object is save into qrc file.
+
+    """
+    # Loop over the folder of resources
+    for root, dirs, files in os.walk(res_folder):
+        if root == res_folder:
+            qrc.add_qresource("/")
+            # Directories in the first level will serve as qresource
+            for directory in dirs:
+                qrc.add_qresource("/" + directory)
+
+        # Record all resources recursively
+        for resource in files:
+            try:
+                prefix = "/" + root.replace(res_folder, "").split("/")[1]
+            except IndexError:
+                prefix = "/"
+            qrc.add_file(os.path.join(root, resource), prefix)
+
+    # Write qrc file
+    if build:
+        qrc.build()

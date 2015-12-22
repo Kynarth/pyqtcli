@@ -9,7 +9,8 @@ def test_init():
     runner = CliRunner()
     result = runner.invoke(pyqtcli, ["init"])
 
-    assert result.output.startswith("Pyqtcli initialized")
+    assert result.output == ("The project named: 'test0' was initialized in {}"
+                             "\n").format(os.getcwd())
     assert os.path.isfile(PyqtcliConfig.INI_FILE)
 
 

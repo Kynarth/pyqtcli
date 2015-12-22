@@ -7,9 +7,15 @@ from pyqtcli.exception import PyqtcliConfigError
 
 
 def test_initial_config_file(config):
+    assert config.path == os.path.abspath(".pyqtclirc")
+    assert config.dir_path == os.getcwd()
+
     assert config.cparser.sections() == ['project']
     assert config.cparser.get("project", "name") == "test0"
     assert config.cparser.get("project", "path") == os.getcwd()
+
+    assert str(config) == "[project]\nname = test0\npath = {}\n\n".format(
+        os.getcwd())
 
 
 def test_get_qrcs(config):
@@ -25,15 +31,15 @@ def test_add_dirs(config):
 
     # test while dirs key does not exist
     config.add_dirs("res.qrc", "resource")
-    assert config.cparser["res.qrc"]["dirs"] == "resource"
+    assert config.get_dirs("res.qrc") == ["resource"]
 
     # test dirs has already one value_passing_a_list
     config.add_dirs("res.qrc", ["test/resource"])
-    assert config.cparser["res.qrc"]["dirs"] == "resource, test/resource"
+    assert config.get_dirs("res.qrc") == ["resource", "test/resource"]
 
     # test dirs has already two values with multiple dirs
-    config.add_dirs("res.qrc", "../a, test/other_res")
-    assert sorted(config.cparser["res.qrc"]["dirs"].split(", ")) == sorted([
+    config.add_dirs("res.qrc", ["../a", "test/other_res"])
+    assert sorted(config.get_dirs("res.qrc")) == sorted([
         "resource", "test/resource", "../a", "test/other_res"])
 
 
@@ -52,8 +58,8 @@ def test_rm_dirs(config):
 
 def test_rm_dirs_multiple(config):
     config.cparser.add_section("res.qrc")
-    config.add_dirs("res.qrc", ["resource, test/resource, ../a"])
-    config.rm_dirs("res.qrc", "resource, ../a")
+    config.add_dirs("res.qrc", ["resource", "test/resource", "../a"])
+    config.rm_dirs("res.qrc", ["resource", "../a"])
     assert config.get_dirs("res.qrc") == ["test/resource"]
 
 
@@ -82,11 +88,19 @@ def test_rm_dirs_with_nonexistant_qrc_section(config):
     assert str(e.value) == "Error: No \'test.qrc\' section in .pyqtclirc."
 
 
+def test_add_remove_and_add_again_dirs(config):
+    config.cparser.add_section("res.qrc")
+    config.add_dirs("res.qrc", "resource")
+    config.rm_dirs("res.qrc", "resource")
+    config.add_dirs("res.qrc", "resource")
+    assert config.get_dirs("res.qrc") == ["resource"]
+
+
 def test_get_dirs(config):
     assert config.get_dirs("res.qrc") == []
 
     config.cparser.add_section("res.qrc")
-    config.cparser.set("res.qrc", "dirs", "resources")
+    config.add_dirs("res.qrc", "resources")
     config.add_dirs("res.qrc", "test/resources")
 
     assert config.get_dirs("res.qrc") == ["resources", "test/resources"]

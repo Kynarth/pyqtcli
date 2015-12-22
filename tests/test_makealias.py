@@ -95,3 +95,12 @@ def test_makealias_recursive():
 
         for resource in cur_qrc.list_files():
             assert resource.attrib.get("alias", None)
+
+
+def test_makealias_recursive_with_no_qrc():
+    runner = CliRunner()
+
+    # Launch makerc command
+    result = runner.invoke(pyqtcli, ["makealias", "-r"])
+
+    assert result.output.startswith("Error: Could not find any qrc files.")
