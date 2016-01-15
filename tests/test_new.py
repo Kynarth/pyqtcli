@@ -5,6 +5,7 @@ from click.testing import CliRunner
 
 from pyqtcli.cli import pyqtcli
 from pyqtcli.qrc import read_qrc
+from pyqtcli import verbose as v
 
 
 def test_new_default(config):
@@ -24,7 +25,7 @@ def test_new_default(config):
     assert ["res.qrc"] == config.get_qrcs()
 
     # Test verbose
-    result.output == "Qrc file \'res.qrc\' has been created."
+    assert result.output == v.info("Qrc file \'res.qrc\' has been created.\n")
 
 
 def test_new_qrc(config):
@@ -43,6 +44,7 @@ def test_new_qrc(config):
     assert ["test.qrc"] == config.get_qrcs()
 
 
+# noinspection PyUnusedLocal
 def test_new_qrc_from_folder(config, test_resources):
     runner = CliRunner()
 
@@ -61,7 +63,7 @@ def test_new_qrc_from_folder(config, test_resources):
     ]
     first_dirs.append("/")
 
-    for qresource in qrc._qresources:
+    for qresource in qrc.qresources:
         assert qresource.attrib.get("prefix", None) in first_dirs
         directory = first_dirs.pop(
             first_dirs.index(qresource.attrib.get("prefix"))
@@ -100,10 +102,10 @@ def test_two_new_qrcs(config):
     assert ["res.qrc", "test.qrc"] == config.get_qrcs()
 
 
-def test_new_duplication(config):
+def test_new_duplication():
     runner = CliRunner()
     runner.invoke(pyqtcli, ["new", "qrc"])
     result = runner.invoke(pyqtcli, ["new", "qrc"])
     assert result.output.startswith(
-        "Error: A qrc file named \'res.qrc\' already exists"
+        "[ERROR]: A qrc file named \'res.qrc\' already exists"
     )

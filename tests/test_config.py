@@ -43,7 +43,7 @@ def test_add_dirs(config):
         "resource", "test/resource", "../a", "test/other_res"])
 
 
-def test_add_dirs_with_nonexistant_qrc_section(config):
+def test_add_dirs_with_nonexistent_qrc_section(config):
     with pytest.raises(PyqtcliConfigError) as e:
         config.add_dirs("test.qrc", "resources")
     assert str(e.value) == "Error: No \'test.qrc\' section in .pyqtclirc."
@@ -63,26 +63,26 @@ def test_rm_dirs_multiple(config):
     assert config.get_dirs("res.qrc") == ["test/resource"]
 
 
-def test_rm_dirs_nonexistant_dir_in_empty_dirs_key(config, capsys):
+def test_rm_dirs_nonexistent_dir_in_empty_dirs_key(config, capsys):
     config.cparser.add_section("res.qrc")
     config.rm_dirs("res.qrc", "resources")
     out, err = capsys.readouterr()
-    assert out.strip() == ("Warning: There is no recorded resources folders "
+    assert out.strip() == ("[WARNING]: There is no recorded resources folders "
                            "to delete in res.qrc")
     config.get_dirs("res.qrc") == []
 
 
-def test_rm_dirs_with_nonrecorded_res_folder(config, capsys):
+def test_rm_dirs_with_non_recorded_res_folder(config, capsys):
     config.cparser.add_section("res.qrc")
     config.add_dirs("res.qrc", "resources")
     config.rm_dirs("res.qrc", "test")
     out, err = capsys.readouterr()
-    assert out.strip() == ("Warning: directory \'test\' isn't recorded "
+    assert out.strip() == ("[WARNING]: Directory \'test\' isn't recorded "
                            "for \'res.qrc\' and so cannot be deleted")
     config.get_dirs("res.qrc") == ["resources"]
 
 
-def test_rm_dirs_with_nonexistant_qrc_section(config):
+def test_rm_dirs_with_nonexistent_qrc_section(config):
     with pytest.raises(PyqtcliConfigError) as e:
         config.rm_dirs("test.qrc", "resources")
     assert str(e.value) == "Error: No \'test.qrc\' section in .pyqtclirc."
@@ -106,11 +106,13 @@ def test_get_dirs(config):
     assert config.get_dirs("res.qrc") == ["resources", "test/resources"]
 
 
+# noinspection PyUnusedLocal
 def test_find_project_config(config):
     found_config = find_project_config()
     assert found_config == os.path.join(os.getcwd(), ".pyqtclirc")
 
 
+# noinspection PyUnusedLocal
 def test_find_project_config_higher_in_tree_directory(config):
     os.rename(".pyqtclirc", "../../.pyqtclirc")
     found_config = find_project_config()
@@ -118,7 +120,7 @@ def test_find_project_config_higher_in_tree_directory(config):
     os.remove("../../.pyqtclirc")
 
 
-def test_find_nonexistant_project_config():
+def test_find_nonexistent_project_config():
     assert find_project_config() is None
 
 

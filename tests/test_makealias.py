@@ -48,7 +48,7 @@ def test_makealias_with_duplication():
     assert files[1].attrib.get("alias", None) is None
 
     # Check if a warning has been send
-    assert ("Warning: Alias \'file.txt\' already exists in \'res.qrc\'"
+    assert ("[WARNING]: Alias \'file.txt\' already exists in \'res.qrc\'"
             " at prefix \'/\'.") in result.output
 
 
@@ -103,4 +103,4 @@ def test_makealias_recursive_with_no_qrc():
     # Launch makerc command
     result = runner.invoke(pyqtcli, ["makealias", "-r"])
 
-    assert result.output.startswith("Error: Could not find any qrc files.")
+    assert result.output.startswith("[ERROR]: Could not find any qrc files.")

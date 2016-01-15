@@ -9,8 +9,7 @@ def test_init():
     runner = CliRunner()
     result = runner.invoke(pyqtcli, ["init"])
 
-    assert result.output == ("The project named: 'test0' was initialized in {}"
-                             "\n").format(os.getcwd())
+    assert result.output.startswith("[INFO]: The project named: 'test0'")
     assert os.path.isfile(PyqtcliConfig.INI_FILE)
 
 
@@ -36,7 +35,7 @@ def test_init_reset_yes_option():
 
     result = runner.invoke(pyqtcli, ["init", "-y"])
     assert result.exit_code == 0
-    assert result.output.startswith("Pyqtcli config reset")
+    assert result.output.startswith("[INFO]: Pyqtcli config reset")
 
 
 def test_init_reset_yes_answer():
@@ -44,7 +43,7 @@ def test_init_reset_yes_answer():
     runner = CliRunner()
 
     result = runner.invoke(pyqtcli, ["init"], input="y")
-    assert result.output.endswith("Pyqtcli config reset\n")
+    assert result.output.endswith("[INFO]: Pyqtcli config reset\n")
     assert result.exit_code == 0
 
 

@@ -111,5 +111,17 @@ def test_makerc_with_invalid_qrc_file():
     open("invalid.qrc", "a").close()
 
     result = runner.invoke(pyqtcli, ["makerc", "-v", "invalid.qrc"])
-    print(result.output)
-    assert result.exit_code != 0
+    assert result.output == (
+        "[WARNING]: Qrc file: \'invalid.qrc\' is not valid.\n")
+
+
+def test_makerc_with_empty_qrc_file():
+    runner = CliRunner()
+
+    QRCTestFile("res.qrc").build()
+
+    result = runner.invoke(pyqtcli, ["makerc", "res.qrc"])
+    assert result.output == (
+        "[WARNING]: res.qrc has no more resources and cannot "
+        "generates its corresponding rc file.\n"
+    )

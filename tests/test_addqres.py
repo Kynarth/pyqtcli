@@ -3,9 +3,10 @@ import shutil
 
 from click.testing import CliRunner
 
-from pyqtcli.qrc import read_qrc
 from pyqtcli.cli import pyqtcli
+from pyqtcli.qrc import read_qrc
 from pyqtcli.test.qrc import QRCTestFile
+from pyqtcli import verbose as v
 
 
 def test_simple_addqres(config, test_resources):
@@ -16,6 +17,7 @@ def test_simple_addqres(config, test_resources):
 
     # Test addqres with default option
     result = runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
+    print(result.output)
     assert result.exit_code == 0
 
     # Parse qrc file
@@ -38,10 +40,10 @@ def test_simple_addqres(config, test_resources):
     config.get_dirs("res.qrc") == ["resources"]
 
 
-def test_complexe_addqres(config, test_resources):
+def test_complex_addqres(config, test_resources):
     runner = CliRunner()
 
-    # Make a new dir to complexify path between resources folder and qrc file
+    # Make a new dir to complicate path between resources folder and qrc file
     os.mkdir("test")
     shutil.move("resources", "test")
 
@@ -49,7 +51,7 @@ def test_complexe_addqres(config, test_resources):
     runner.invoke(pyqtcli, ["new", "qrc", "../res.qrc"])
 
     result = runner.invoke(
-        pyqtcli, ["addqres", "-a", "-v", "../res.qrc", "test/resources"]
+            pyqtcli, ["addqres", "-a", "-v", "../res.qrc", "test/resources"]
     )
     assert result.exit_code == 0
 
@@ -146,7 +148,7 @@ def test_addqres_with_two_res_folders(config, test_resources):
 
     # Create to qresources in res.qrc
     runner.invoke(
-        pyqtcli, ["addqres", "res.qrc", "resources", "test/other_res"])
+            pyqtcli, ["addqres", "res.qrc", "resources", "test/other_res"])
 
     # Parse qrc file
     qrcfile = read_qrc("res.qrc")
@@ -180,20 +182,18 @@ def test_addqres_with_two_res_folders(config, test_resources):
         "resources", "test/other_res"])
 
 
+# noinspection PyUnusedLocal
 def test_addqres_in_non_project_qrc(config, test_resources):
     runner = CliRunner()
 
-    (
-        QRCTestFile("res")
-        .add_qresource("/")
-        .add_file("test.txt")
-        .build()
-    )
+    QRCTestFile("res").add_qresource("/").add_file("test.txt").build()
 
     result = runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
-    assert result.output.startswith("Error: res.qrc isn't part of the project.")
+    assert result.output == v.error(
+            "res.qrc isn't part of the project.\nAborted!\n")
 
 
+# noinspection PyUnusedLocal
 def test_addqres_duplication(config, test_resources):
     runner = CliRunner()
 
@@ -206,6 +206,5 @@ def test_addqres_duplication(config, test_resources):
     # Add the same qresource
     result = runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
 
-    assert result.output.startswith(
-        "Warning: You have already added \'resources\' to res.qrc."
-    )
+    assert result.output == v.warning(
+            "You have already added \'resources\' to res.qrc.\n")

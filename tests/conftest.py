@@ -8,7 +8,12 @@ from pyqtcli.config import PyqtcliConfig
 
 @pytest.fixture(autouse=True)
 def tmp_test_dir(tmpdir_factory, request):
-    """Fixture to create a dir for tests and remove it at the end."""
+    """Fixture to create a dir for tests and remove it at the end.
+
+    Args:
+        tmpdir_factory: pytest's fixture to help generate temporary directories.
+        request: pytest's fixture to access to the test context.
+    """
     cwd = os.getcwd()
     tmp_dir = tmpdir_factory.mktemp("test")
     tmp_dir.chdir()
@@ -51,5 +56,5 @@ def test_resources():
     open('resources/musics/solos/best/best_solo1.mp3', 'a').close()
     open('resources/musics/solos/best/best_solo2.mp3', 'a').close()
 
-    # Nnumber of created files
+    # Number of created files
     return 14

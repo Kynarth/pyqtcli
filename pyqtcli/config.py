@@ -1,7 +1,9 @@
+"""Module regrouping classes and functions to manage configuration files."""
+
 import os
-import click
 import configparser
 
+from pyqtcli import verbose as v
 from pyqtcli.exception import PyqtcliConfigError
 
 
@@ -23,18 +25,17 @@ def find_project_config():
         cwd = "../" + cwd
 
 
-class PyqtcliConfig():
+class PyqtcliConfig:
     """Class to modify and read config file of pyqtcli tool.
 
     Attributes:
-        INI_FILE (str): pyqtcli config file name.
-        cparser (configparser.ConfigParser): Ini file parser.
+        path (Optional[str]): Absolute path to the config file.
+        msg (Optional[str]): A message to display at the generation of the
+            config file.
+        verbose (Optional[bool]): A boolean to determine if a message is
+            displayed at the config file generation.
         dir_path (str): Absolute path to config file directory.
-        path (str): Absolute path to the config file.
-        msg (str): A message to display at the generation of the config
-            file.
-        verbose (bool): A boolean to determine if a message is displayed at
-            the config file generation.
+        cparser (:class:`configparser.ConfigParser`): Ini file parser.
 
     """
 
@@ -57,8 +58,7 @@ class PyqtcliConfig():
                 msg = "The project named: \'{}\' was initialized in {}".format(
                     os.path.basename(os.getcwd()), os.getcwd())
 
-            if verbose:
-                click.secho(msg, fg="green", bold=True)
+            v.info(msg, verbose)
 
         self.read()
 
@@ -88,10 +88,10 @@ class PyqtcliConfig():
             directories (str or list): Relative paths between directories and
                 project dir.
                 ex: "\nres\ntest/res\n../res" or ["res"] if one dir in a list
-            commit (bool): if true save changes in the config file.
+            commit (Optional[bool]): if true save changes in the config file.
 
         Raises:
-            PyqtcliConfigError: Raised when `qrc` isn't recorded in the
+            :class:`PyqtcliConfigError`: Raised when `qrc` isn't recorded in the
                 project config file.
 
         """
@@ -103,7 +103,6 @@ class PyqtcliConfig():
                 directories = "\n".join(set(directories.splitlines()))
             else:
                 directories = "\n" + "\n".join(set(directories.splitlines()))
-
 
         try:
             dirs = self.cparser[qrc].get("dirs", None)
@@ -127,10 +126,10 @@ class PyqtcliConfig():
             directories (str or list): Relative paths between directories and
                 project dir.
                 ex: "\nres\ntest/res\n/res" or ["res"] for one dir in a list
-            commit (bool): if true save changes in the config file.
+            commit (Optional[bool]): if true save changes in the config file.
 
         Raises:
-            PyqtcliConfigError: Raised when `qrc` isn't recorded in the
+            :class:`PyqtcliConfigError`: Raised when `qrc` isn't recorded in the
                 project config file.
 
         """
@@ -144,9 +143,9 @@ class PyqtcliConfig():
                     directories = [directories]
 
             if dirs is None:  # There is no resources folders recorded yet
-                msg = ("Warning: There is no recorded resources folders "
-                       "to delete in {}").format(qrc)
-                click.secho(msg, fg="yellow", bold=True)
+                v.warning(
+                    ("There is no recorded resources folders "
+                     "to delete in {}").format(qrc))
             else:
                 # Delete each relative path contains in directory argument
                 dirs = self.get_dirs(qrc)
@@ -154,10 +153,10 @@ class PyqtcliConfig():
                     try:
                         dirs.remove(rel_path)
                     except ValueError:
-                        msg = ("Warning: directory \'{}\' isn't recorded "
-                               "for \'{}\' and so cannot be deleted".format(
-                                   rel_path, qrc))
-                        click.secho(msg, fg="yellow", bold=True)
+                        v.warning(
+                            ("Directory \'{}\' isn't recorded "
+                             "for \'{}\' and so cannot be deleted".format(
+                                   rel_path, qrc)))
 
                 # Save updated dirs variable
                 dirs = "\n".join(dirs)
@@ -183,11 +182,19 @@ class PyqtcliConfig():
             list: A list of relative path to resources folders from project dir.
 
         """
+        self.read()
         dirs = self.cparser.get(qrc, "dirs", fallback=[])
         if dirs == "":
             return []
         else:
-            return dirs.splitlines()[1:] if dirs else dirs
+            if dirs:
+                directories = dirs.splitlines()
+                if len(directories) == 1:
+                    return directories
+                else:
+                    return directories[1:]
+            else:
+                return dirs
 
     def save(self):
         """Save changes."""

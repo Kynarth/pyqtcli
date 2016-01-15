@@ -1,4 +1,4 @@
-"""This module regroups all exceptions tied to pyqtcli appliction."""
+"""This module regroups all exceptions tied to pyqtcli cli."""
 
 
 class QresourceError(Exception):

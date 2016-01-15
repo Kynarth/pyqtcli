@@ -1,10 +1,10 @@
 import os
-import click
 
 from lxml import etree
 
-WARNING_TEMPLATE = (
-    "Warning: Alias \'{}\' already exists in \'{}\' at prefix \'{}\'.")
+from pyqtcli import verbose as v
+
+WARNING_TEMPLATE = "Alias \'{}\' already exists in \'{}\' at prefix \'{}\'."
 
 
 def write_alias(qrc_files, verbose):
@@ -15,7 +15,7 @@ def write_alias(qrc_files, verbose):
     script warns the user of incriminated files.
 
     Args:
-        qrc_files (list): A list containing path to qrc files.
+        qrc_files (list or tuple): A list containing path to qrc files.
         verbose (bool): True if the user pass '-v' or '--verbose' option
             to see what's happening.
     """
@@ -26,16 +26,14 @@ def write_alias(qrc_files, verbose):
         root = tree.getroot()
 
         # Inform which qrc file is processed
-        if verbose:
-            click.secho("Current file: {}".format(qrc_file),
-                        fg="green", bold=True)
+        v.info("Current file: {}".format(qrc_file), verbose)
 
         # Iterate over each qresource containing file resources
         for qresource in root.iter(tag="qresource"):
             # Alias are prefixed by qresource prefix so we check only
             # duplication within qresource
             aliases = []
-            # Iterage over each file that doesn't have already an alias
+            # Iterate over each file that doesn't have already an alias
             for resource in qresource.iter(tag="file"):
                 alias = os.path.basename(resource.text)
                 if alias not in aliases:
@@ -43,9 +41,8 @@ def write_alias(qrc_files, verbose):
                         resource.set("alias", alias)
 
                         # Inform which alias is given to the current resource
-                        if verbose:
-                            click.secho("resource: '{}' => {}".format(
-                                resource.text, alias), fg="green", bold=True)
+                        v.info("resource: '{}' => {}".format(
+                            resource.text, alias), verbose)
                 else:
                     # Add same alias warning
                     warnings.append(WARNING_TEMPLATE.format(
@@ -63,4 +60,4 @@ def write_alias(qrc_files, verbose):
     # Warning user of which resources that could not receive alias
     # because of duplication
     for message in warnings:
-        click.secho(message, fg="yellow", bold=True)
+        v.warning(message)

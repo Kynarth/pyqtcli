@@ -1,5 +1,4 @@
 import os
-import sys
 
 from lxml import etree
 from functools import wraps
@@ -7,7 +6,7 @@ from functools import wraps
 from pyqtcli.qrc import QRCFile
 
 
-class GenerativeBase():
+class GenerativeBase:
     def _generate(self):
         s = self.__class__.__new__(self.__class__)
         s.__dict__ = self.__dict__.copy()
@@ -29,16 +28,12 @@ class QRCTestFile(QRCFile, GenerativeBase):
     Attributes:
         name (str): File name of the new qrc file. Qrc extension is
             automatically added.
-        path (optional[str]): Absolute ath to new qrc file.
-        dir_path (str): Absolute path to the qrc file directory.
-        _qresources (list[etree.SubElement]): List of qresources created.
-        _last_qresource (etree.SubElement): Last qresource created.
-        _root (etree.Element): Root element of qrc file.
-        _tree (etree.ElementTree): Qrc tree with added qresources and resources.
+        path (Optional[str]): Absolute ath to new qrc file.
+        _last_qresource (:class:`etree.Element`): Last qresource created.
 
     Example:
         >>>(
-        ...    TestQRCFile("test")
+        ...    QRCTestFile("test")
         ...    .add_qresource("/")
         ...    .add_file("test.txt")
         ...    .add_file("test1.txt")
@@ -54,7 +49,7 @@ class QRCTestFile(QRCFile, GenerativeBase):
         self._last_qresource = None
 
     @chain
-    def add_qresource(self, prefix="/"):
+    def add_qresource(self, prefix="/", folder=None):
         """Create to the qresource subelement.
 
         Args:
@@ -73,6 +68,7 @@ class QRCTestFile(QRCFile, GenerativeBase):
 
         Args:
             resource (str): Path to the resource.
+            prefix (Optional[str]: Prefix attribute like => "/" for qresource.
 
         """
         # Add the resource to qresource element corresponding to prefix or
@@ -95,10 +91,8 @@ class QRCTestFile(QRCFile, GenerativeBase):
         resource = os.path.join(os.path.split(self.path)[0], resource)
         if not os.path.isfile(resource):
             open(resource, 'a').close()
-        else:
-            sys.exit("Error: the file: {} already exists.".format(resource))
 
     @chain
     def build(self):
-        """Generate qrc file in function avec path and name attribute."""
+        """Generate qrc file in function with path and name attributes."""
         super().build()

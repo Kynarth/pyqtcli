@@ -8,8 +8,10 @@ from pyqtcli.cli import pyqtcli
 from pyqtcli.qrc import read_qrc
 from pyqtcli.test.qrc import QRCTestFile
 from pyqtcli.exception import QresourceError
+from pyqtcli import verbose as v
 
 
+# noinspection PyUnusedLocal
 def test_simple_rmqres(config, test_resources):
     runner = CliRunner()
 
@@ -32,14 +34,16 @@ def test_simple_rmqres(config, test_resources):
         "Error: No <qresource> node corresponding to '/resources' prefix"
     )
 
-    # Check res_folder has beed removed from dirs variable of config file
+    # Check res_folder has been removed from dirs variable of config file
     config.read()
     assert config.get_dirs("res.qrc") == []
 
-    assert result.output == (
-        "Resources folder: \'resources\' has been removed in res.qrc.\n")
+    assert result.output == v.info(
+        "Resources folder: \'resources\' has been removed in res.qrc.\n"
+    )
 
 
+# noinspection PyUnusedLocal
 def test_rmqres_with_multiple_res_folders(config, test_resources):
     runner = CliRunner()
 
@@ -74,12 +78,13 @@ def test_rmqres_with_multiple_res_folders(config, test_resources):
         "Error: No <qresource> node corresponding to '/other_res' prefix"
     )
 
-    # Check res_folder has beed removed from dirs variable of config file
+    # Check res_folder has been removed from dirs variable of config file
     config.read()
     assert config.get_dirs("res.qrc") == []
 
 
-def test_rmqres_with_multiple_res_folders_separatly(config, test_resources):
+# noinspection PyUnusedLocal
+def test_rmqres_with_multiple_res_folders_separately(config, test_resources):
     runner = CliRunner()
 
     # Copy resources dir to make another resource folder in another directory
@@ -114,11 +119,12 @@ def test_rmqres_with_multiple_res_folders_separatly(config, test_resources):
         "Error: No <qresource> node corresponding to '/other_res' prefix"
     )
 
-    # Check res_folder has beed removed from dirs variable of config file
+    # Check res_folder has been removed from dirs variable of config file
     config.read()
     assert config.get_dirs("res.qrc") == []
 
 
+# noinspection PyUnusedLocal
 def test_rmqres_with_non_recorded_qrc(config, test_resources):
     runner = CliRunner()
 
@@ -130,20 +136,23 @@ def test_rmqres_with_non_recorded_qrc(config, test_resources):
     )
 
     result = runner.invoke(pyqtcli, ["rmqres", "res.qrc", "resources"])
-    assert result.output.startswith("Error: res.qrc isn't part of the project.")
+    assert result.output == v.error(
+            "res.qrc isn't part of the project.\nAborted!\n")
 
 
+# noinspection PyUnusedLocal
 def test_rmqres_with_non_recorded_res_folder(config, test_resources):
     runner = CliRunner()
 
     runner.invoke(pyqtcli, ["new", "qrc"])
 
     result = runner.invoke(pyqtcli, ["rmqres", "res.qrc", "resources"])
-    assert result.output == (
-        "Warning: There is no recorded resources folders to delete in res.qrc\n"
+    assert result.output == v.warning(
+        "There is no recorded resources folders to delete in res.qrc\n"
     )
 
 
+# noinspection PyUnusedLocal
 def test_delete_recorded_and_not_recorded_res_folders(config, test_resources):
     shutil.copytree("resources", "test")
 
@@ -157,6 +166,9 @@ def test_delete_recorded_and_not_recorded_res_folders(config, test_resources):
 
     # Remove resources folder config file and qrc
     result = runner.invoke(pyqtcli, ["rmqres", "res.qrc", "test"])
-    assert result.output == (
-        "Warning: directory 'test' isn't recorded for 'res.qrc' and so "
-        "cannot be deleted\n")
+    assert result.output == v.warning(
+        (
+            "Directory 'test' isn't recorded for 'res.qrc' and so "
+            "cannot be deleted\n"
+        )
+    )
