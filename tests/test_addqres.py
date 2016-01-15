@@ -6,6 +6,7 @@ from click.testing import CliRunner
 from pyqtcli.cli import pyqtcli
 from pyqtcli.qrc import read_qrc
 from pyqtcli.test.qrc import QRCTestFile
+from pyqtcli.test.verbose import format_msg
 from pyqtcli import verbose as v
 
 
@@ -188,7 +189,7 @@ def test_addqres_in_non_project_qrc(config, test_resources):
     QRCTestFile("res").add_qresource("/").add_file("test.txt").build()
 
     result = runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
-    assert result.output == v.error(
+    assert format_msg(result.output) == v.error(
             "res.qrc isn't part of the project.\nAborted!\n")
 
 
@@ -205,5 +206,5 @@ def test_addqres_duplication(config, test_resources):
     # Add the same qresource
     result = runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
 
-    assert result.output == v.warning(
+    assert format_msg(result.output) == v.warning(
             "You have already added \'resources\' to res.qrc.\n")
