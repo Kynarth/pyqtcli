@@ -2,6 +2,7 @@ import os
 import pytest
 
 from pyqtcli.config import PyqtcliConfig
+from pyqtcli.test.verbose import format_msg
 from pyqtcli.config import find_project_config
 from pyqtcli.exception import PyqtcliConfigError
 
@@ -67,8 +68,8 @@ def test_rm_dirs_nonexistent_dir_in_empty_dirs_key(config, capsys):
     config.cparser.add_section("res.qrc")
     config.rm_dirs("res.qrc", "resources")
     out, err = capsys.readouterr()
-    assert out.strip() == ("[WARNING]: There is no recorded resources folders "
-                           "to delete in res.qrc")
+    assert format_msg(out) == ("[WARNING]: There is no recorded resources "
+                               "folders to delete in res.qrc")
     config.get_dirs("res.qrc") == []
 
 
@@ -77,8 +78,9 @@ def test_rm_dirs_with_non_recorded_res_folder(config, capsys):
     config.add_dirs("res.qrc", "resources")
     config.rm_dirs("res.qrc", "test")
     out, err = capsys.readouterr()
-    assert out.strip() == ("[WARNING]: Directory \'test\' isn't recorded "
-                           "for \'res.qrc\' and so cannot be deleted")
+    assert format_msg(out) == ("[WARNING]: Directory \'test\' isn't "
+                               "recorded "
+                               "for \'res.qrc\' and so cannot be deleted")
     config.get_dirs("res.qrc") == ["resources"]
 
 

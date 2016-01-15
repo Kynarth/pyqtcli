@@ -6,6 +6,7 @@ from click.testing import CliRunner
 from pyqtcli.cli import pyqtcli
 from pyqtcli.qrc import read_qrc
 from pyqtcli import verbose as v
+from pyqtcli.test.verbose import format_msg
 
 
 def test_new_default(config):
@@ -25,7 +26,8 @@ def test_new_default(config):
     assert ["res.qrc"] == config.get_qrcs()
 
     # Test verbose
-    assert result.output == v.info("Qrc file \'res.qrc\' has been created.\n")
+    assert format_msg(result.output) == v.info(
+            "Qrc file \'res.qrc\' has been created.\n")
 
 
 def test_new_qrc(config):
@@ -106,6 +108,6 @@ def test_new_duplication():
     runner = CliRunner()
     runner.invoke(pyqtcli, ["new", "qrc"])
     result = runner.invoke(pyqtcli, ["new", "qrc"])
-    assert result.output.startswith(
+    assert format_msg(result.output).startswith(
         "[ERROR]: A qrc file named \'res.qrc\' already exists"
     )

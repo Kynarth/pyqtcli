@@ -7,6 +7,7 @@ from click.testing import CliRunner
 from pyqtcli.cli import pyqtcli
 from pyqtcli.qrc import read_qrc
 from pyqtcli.test.qrc import QRCTestFile
+from pyqtcli.test.verbose import format_msg
 from pyqtcli.exception import QresourceError
 from pyqtcli import verbose as v
 
@@ -30,7 +31,7 @@ def test_simple_rmqres(config, test_resources):
     # Check qresource has been deleted
     with pytest.raises(QresourceError) as e:
         qrcfile.get_qresource("/resources")
-    assert str(e.value) == (
+    assert format_msg(str(e.value)) == (
         "Error: No <qresource> node corresponding to '/resources' prefix"
     )
 
@@ -38,7 +39,7 @@ def test_simple_rmqres(config, test_resources):
     config.read()
     assert config.get_dirs("res.qrc") == []
 
-    assert result.output == v.info(
+    assert format_msg(result.output) == v.info(
         "Resources folder: \'resources\' has been removed in res.qrc.\n"
     )
 
@@ -67,14 +68,14 @@ def test_rmqres_with_multiple_res_folders(config, test_resources):
     # Check qresources has been deleted
     with pytest.raises(QresourceError) as e:
         qrcfile.get_qresource("/resource")
-    assert str(e.value) == (
+    assert format_msg(str(e.value)) == (
         "Error: No <qresource> node corresponding to '/resource' prefix"
     )
 
     # Check qresources has been deleted
     with pytest.raises(QresourceError) as e:
         qrcfile.get_qresource("/other_res")
-    assert str(e.value) == (
+    assert format_msg(str(e.value)) == (
         "Error: No <qresource> node corresponding to '/other_res' prefix"
     )
 
@@ -108,14 +109,14 @@ def test_rmqres_with_multiple_res_folders_separately(config, test_resources):
     # Check qresources has been deleted
     with pytest.raises(QresourceError) as e:
         qrcfile.get_qresource("/resource")
-    assert str(e.value) == (
+    assert format_msg(str(e.value)) == (
         "Error: No <qresource> node corresponding to '/resource' prefix"
     )
 
     # Check qresources has been deleted
     with pytest.raises(QresourceError) as e:
         qrcfile.get_qresource("/other_res")
-    assert str(e.value) == (
+    assert format_msg(str(e.value)) == (
         "Error: No <qresource> node corresponding to '/other_res' prefix"
     )
 
@@ -136,7 +137,7 @@ def test_rmqres_with_non_recorded_qrc(config, test_resources):
     )
 
     result = runner.invoke(pyqtcli, ["rmqres", "res.qrc", "resources"])
-    assert result.output == v.error(
+    assert format_msg(result.output) == v.error(
             "res.qrc isn't part of the project.\nAborted!\n")
 
 
@@ -147,7 +148,7 @@ def test_rmqres_with_non_recorded_res_folder(config, test_resources):
     runner.invoke(pyqtcli, ["new", "qrc"])
 
     result = runner.invoke(pyqtcli, ["rmqres", "res.qrc", "resources"])
-    assert result.output == v.warning(
+    assert format_msg(result.output) == v.warning(
         "There is no recorded resources folders to delete in res.qrc\n"
     )
 
@@ -166,7 +167,7 @@ def test_delete_recorded_and_not_recorded_res_folders(config, test_resources):
 
     # Remove resources folder config file and qrc
     result = runner.invoke(pyqtcli, ["rmqres", "res.qrc", "test"])
-    assert result.output == v.warning(
+    assert format_msg(result.output) == v.warning(
         (
             "Directory 'test' isn't recorded for 'res.qrc' and so "
             "cannot be deleted\n"

@@ -4,6 +4,7 @@ from click.testing import CliRunner
 
 from pyqtcli.cli import pyqtcli
 from pyqtcli.test.qrc import QRCTestFile
+from pyqtcli.test.verbose import format_msg
 
 
 def test_makerc_with_on_file():
@@ -111,7 +112,7 @@ def test_makerc_with_invalid_qrc_file():
     open("invalid.qrc", "a").close()
 
     result = runner.invoke(pyqtcli, ["makerc", "-v", "invalid.qrc"])
-    assert result.output == (
+    assert format_msg(result.output) == (
         "[WARNING]: Qrc file: \'invalid.qrc\' is not valid.\n")
 
 
@@ -121,7 +122,7 @@ def test_makerc_with_empty_qrc_file():
     QRCTestFile("res.qrc").build()
 
     result = runner.invoke(pyqtcli, ["makerc", "res.qrc"])
-    assert result.output == (
+    assert format_msg(result.output) == (
         "[WARNING]: res.qrc has no more resources and cannot "
         "generates its corresponding rc file.\n"
     )

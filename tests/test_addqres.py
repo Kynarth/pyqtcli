@@ -17,7 +17,6 @@ def test_simple_addqres(config, test_resources):
 
     # Test addqres with default option
     result = runner.invoke(pyqtcli, ["addqres", "res.qrc", "resources"])
-    print(result.output)
     assert result.exit_code == 0
 
     # Parse qrc file

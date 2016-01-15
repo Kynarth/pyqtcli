@@ -5,6 +5,7 @@ from click.testing import CliRunner
 from pyqtcli.cli import pyqtcli
 from pyqtcli.qrc import read_qrc
 from pyqtcli.test.qrc import QRCTestFile
+from pyqtcli.test.verbose import format_msg
 
 
 def test_makealias_with_on_file():
@@ -49,7 +50,7 @@ def test_makealias_with_duplication():
 
     # Check if a warning has been send
     assert ("[WARNING]: Alias \'file.txt\' already exists in \'res.qrc\'"
-            " at prefix \'/\'.") in result.output
+            " at prefix \'/\'.") in format_msg(result.output)
 
 
 def test_makealias_recursive():
@@ -103,4 +104,5 @@ def test_makealias_recursive_with_no_qrc():
     # Launch makerc command
     result = runner.invoke(pyqtcli, ["makealias", "-r"])
 
-    assert result.output.startswith("[ERROR]: Could not find any qrc files.")
+    assert format_msg(result.output).startswith(
+            "[ERROR]: Could not find any qrc files.")

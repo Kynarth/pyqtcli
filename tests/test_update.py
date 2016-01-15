@@ -8,6 +8,7 @@ from click.testing import CliRunner
 from pyqtcli.cli import pyqtcli
 from pyqtcli.qrc import read_qrc
 from pyqtcli.test.qrc import QRCTestFile
+from pyqtcli.test.verbose import format_msg
 from pyqtcli.exception import QresourceError
 
 
@@ -135,7 +136,7 @@ def test_update_with_qrc_recording_res_in_project_dir(config):
     assert (
         "[WARNING]: Can't update automatically a qrc file where "
         "resources are in the same directory as the project one.\n"
-    ) == regex.sub(" ", result.output)
+    ) == format_msg(result.output)
 
     # Check corresponding rc has been generated
     assert os.path.isfile("res_rc.py")
