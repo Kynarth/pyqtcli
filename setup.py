@@ -8,7 +8,9 @@ setup(
     author_email="kynarth.alseif@gmail.com",
     packages=["pyqtcli"],
     include_package_data=True,
-    install_requires=["click>=6.2", "colorama>=0.3.3", "lxml>=3.5.0"],
+    install_requires=[
+        "click>=6.2", "colorama>=0.3.3", "lxml>=3.5.0", "PyYAML>=3.11"
+    ],
     entry_points="""
         [console_scripts]
         pyqtcli=pyqtcli.cli:pyqtcli
