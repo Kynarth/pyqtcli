@@ -10,6 +10,15 @@ def pyqtcli():
     pass
 
 
+@pyqtcli.command("init", short_help="Initialize pyqtcli in current directory")
+@click.option("-q", "-quiet", is_flag=True, help="Doesn't display any messages")
+@click.option("-y", "-yes", is_flag=True, help="Send 'yes' answer to prompt")
+def init(quiet, yes):
+    """Initialize pyqtcli for the current PyQt5 project."""
+    # Verify that no other project config exist
+    pass
+
+
 @pyqtcli.command("new", short_help="Generate a new qrc file")
 @click.option("-v", "--verbose", is_flag=True, help="Explain the process")
 @click.argument("path", default="res.qrc", type=click.Path(writable=True))
