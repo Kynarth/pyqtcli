@@ -1,6 +1,8 @@
+import os
 import click
 
 from pyqtcli import __version__
+from pyqtcli.config import ProjectConfig
 
 
 @click.group()
@@ -15,8 +17,24 @@ def pyqtcli():
 @click.option("-y", "-yes", is_flag=True, help="Send 'yes' answer to prompt")
 def init(quiet, yes):
     """Initialize pyqtcli for the current PyQt5 project."""
+    message = None  # Message to inform the user about the initialization
+
     # Verify that no other project config exist
-    pass
+    if os.path.isfile(ProjectConfig.NAME) and not yes:
+        if click.confirm("Do you want to reset pyqtcli config?", abort=True):
+            os.remove(ProjectConfig.NAME)
+            message = "Pyqtcli config reset"
+
+    # User wants to overwrite previous config file without prompt
+    elif os.path.isfile(ProjectConfig.NAME) and yes:
+        os.remove(ProjectConfig.NAME)
+        message = "Pyqtcli config reset"
+
+    # Generate project config file
+    if not quiet:
+        ProjectConfig(msg=message)
+    else:
+        ProjectConfig(verbose=False)
 
 
 @pyqtcli.command("new", short_help="Generate a new qrc file")
