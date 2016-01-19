@@ -1,8 +1,8 @@
 import os
 import yaml
 
+from pyqtcli import verbose as v
 from pyqtcli.config import ProjectConfig
-from pyqtcli.test.verbose import format_msg
 
 
 def test_config_with_default_args(capsys):
@@ -21,9 +21,9 @@ def test_config_with_default_args(capsys):
     assert cfg.name == "test0"
 
     # Check if the generation of the config file displays the correct message
-    assert format_msg(out) == (
-        "[INFO]: The project named: 'test0' was initialized in {}"
-    ).format(os.getcwd())
+    assert out.rstrip() == v.info(
+        "The project named: 'test0' was initialized in {}".format(os.getcwd())
+    )
 
 
 def test_config_with_path_and_message_args(capsys):
@@ -46,7 +46,7 @@ def test_config_with_path_and_message_args(capsys):
     assert cfg.name == "config"
 
     # Check if the generation of the config file displays the correct message
-    assert format_msg(out) == "[INFO]: I'm a test message"
+    assert out.rstrip() == v.info("I'm a test message")
 
 
 def test_retrieving_existent_config_file(capsys):
@@ -72,6 +72,6 @@ def test_retrieving_existent_config_file(capsys):
     assert cfg.name == "test0"
 
     # Check if the generation of the config file displays the correct message
-    assert format_msg(out) == (
-        "[INFO]: The project named: 'test0' was initialized in {}"
-    ).format(config_dir)
+    assert out.rstrip() == v.info(
+        "The project named: 'test0' was initialized in {}".format(config_dir)
+    )

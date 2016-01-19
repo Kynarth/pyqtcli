@@ -50,7 +50,7 @@ def info(msg, verbose=True):
     msg = format_message(full_msg, Message.INFO)[len(Message.INFO.value):]
     click.secho(msg, fg="green")
 
-    return full_msg
+    return Message.INFO.value + msg.rstrip()
 
 
 def warning(msg):
@@ -69,7 +69,7 @@ def warning(msg):
     msg = format_message(full_msg, Message.WARNING)[len(Message.WARNING.value):]
     click.secho(msg, fg="yellow")
 
-    return full_msg
+    return Message.INFO.value + msg.rstrip()
 
 
 def error(msg):
@@ -88,4 +88,4 @@ def error(msg):
     msg = format_message(full_msg, Message.ERROR)[len(Message.ERROR.value):]
     click.secho(msg, fg="red", err=True)
 
-    return full_msg
+    return Message.INFO.value + msg.rstrip()
